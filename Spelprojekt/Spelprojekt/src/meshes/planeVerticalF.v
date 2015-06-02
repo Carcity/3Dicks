@@ -1,3 +1,4 @@
+mtllib BaseCubeTextured.mtl
 v -17.5 17.5 -0.5
 v -17.5 -17.5 -0.5
 v 17.5 17.5 -0.5
