@@ -69,16 +69,10 @@ Game::~Game()
 		delete engine;
 	if (content)
 		delete content;
-	if (player)
-		delete player;
-	if (enemyManager)
-		delete enemyManager;
 	if (animationManager)
 		delete animationManager;
 	if (map)
 		delete map;
-	if (in)
-		delete in;
 }
 
 void Game::init(GLFWwindow* windowRef)
@@ -103,17 +97,11 @@ void Game::init(GLFWwindow* windowRef)
 	content->init();
 	animationManager = new AnimationManager();
 	animationManager->init();
-	player = new Player();
-	player->init();
 	map = new Map();
 	map->init();
+	//cam = new CameraControl();
 
-	in = new UserInput();
 	glfwGetCursorPos(windowRef, &lastX, &lastY);
-	in->Init(viewMat, glm::vec3(0, 0, 25), glm::vec3(0, 0, 24), glm::vec3(0, 1, 0));
-	
-	//temp
-	enemyManager = new EnemyManager();
 
 	// do not delete in this class
 	this->windowRef = windowRef;
@@ -158,14 +146,16 @@ void Game::update(float deltaTime)
 	//Game code
 	//..
 	//..
-	player->update(deltaTime);
+
 	animationManager->update();
 	//Render const
-	engine->render(player, enemyManager, map, content, animationManager);
+	engine->render(map, content, animationManager);
 }
 
 void Game::readInput(float deltaTime)
 {
+	//cam->getViewMatrix();
+	/*
 	int state;
 	//Mouse Buttons
 	state = glfwGetMouseButton(windowRef, GLFW_MOUSE_BUTTON_RIGHT);
@@ -194,5 +184,5 @@ void Game::readInput(float deltaTime)
 	lastX = x;
 	lastY = y;
 	
-	in->Act(deltaTime);
+	in->Act(deltaTime);*/
 }

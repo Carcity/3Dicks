@@ -1,20 +1,22 @@
 #ifndef MAP_H
 #define MAP_H
 
-#include "mapChunk.h"
 
+#include "gameObject.h"
 class Map
 {
 private:
-	MapChunk* chunks = 0;
-	int width = 0;
-	int height = 0;
+	GameObject** worldObjs;
+	GameObject* background;
+	int size;
+
 public:
 	Map(){};
 	~Map();
 	void init();
-	int readSquareSize() const;
-	const MapChunk* getChunks() const;
+	GameObject** getObjects() const;
+	int getSize() const;
+	const GameObject* getBackground() const;
 };
 
 #endif

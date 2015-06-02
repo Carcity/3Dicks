@@ -90,31 +90,26 @@
   <ItemGroup>
     <ClCompile Include="src\engine\AnimationManager.cpp" />
     <ClCompile Include="src\engine\AnimationObject.cpp" />
+    <ClCompile Include="src\engine\CameraControl.cpp" />
     <ClCompile Include="src\engine\ContentManager.cpp" />
     <ClCompile Include="src\engine\engine.cpp" />
     <ClCompile Include="src\engine\object.cpp" />
     <ClCompile Include="src\game\game.cpp" />
     <ClCompile Include="src\game\gameObject.cpp" />
     <ClCompile Include="src\game\map.cpp" />
-    <ClCompile Include="src\game\mapChunk.cpp" />
-    <ClCompile Include="src\game\player.cpp" />
     <ClCompile Include="src\Main.cpp" />
-    <ClCompile Include="src\UserInput.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Align16.h" />
     <ClInclude Include="src\engine\AnimationManager.h" />
     <ClInclude Include="src\engine\AnimationObject.h" />
+    <ClInclude Include="src\engine\CameraControl.h" />
     <ClInclude Include="src\engine\ContentManager.h" />
     <ClInclude Include="src\engine\engine.h" />
     <ClInclude Include="src\engine\object.h" />
-    <ClInclude Include="src\game\enemyManager.h" />
     <ClInclude Include="src\game\game.h" />
     <ClInclude Include="src\game\gameObject.h" />
     <ClInclude Include="src\game\map.h" />
-    <ClInclude Include="src\game\mapChunk.h" />
-    <ClInclude Include="src\game\player.h" />
-    <ClInclude Include="src\UserInput.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

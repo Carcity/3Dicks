@@ -2,7 +2,10 @@
 
 Engine::~Engine()
 {
-
+	if (cam)
+		delete cam;
+	if (viewMatrix)
+		delete viewMatrix;
 }
 
 void Engine::init(glm::mat4* viewMat)
@@ -18,6 +21,8 @@ void Engine::init(glm::mat4* viewMat)
 	//temp camera
 	viewMatrix = viewMat;
 	projMatrix = glm::perspective(3.14f*0.45f, 800.f / 800.0f, 0.1f, 1000.0f);
+
+	cam = new CameraControl();
 
 	//Temp shader
 	const char* vertex_shader = R"(
@@ -90,18 +95,18 @@ void Engine::init(glm::mat4* viewMat)
 	uniformVP = glGetUniformLocation(tempshader, "VP");
 }
 
-void Engine::render(const Player* player, const EnemyManager* enemyManager,
-	const Map* map, const ContentManager* content, const AnimationManager* anim)
+void Engine::render(const Map* map, const ContentManager* content, const AnimationManager* anim)
 {
+	viewMatrix = &cam->getViewMatrix();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	int facecount = 0;
 	glUseProgram(tempshader);
-	
+
 	glm::mat4 VP = projMatrix * *viewMatrix;
 	glProgramUniformMatrix4fv(tempshader, uniformVP, 1, false, &VP[0][0]);
 
 	// -- PlayerDraw --
-	player->bindWorldMat(&tempshader, &uniformModel);
+	//player->bindWorldMat(&tempshader, &uniformModel);
 	facecount = anim->bindPlayer(); //animationManager
 
 	glDrawElements(GL_TRIANGLES, facecount * 3, GL_UNSIGNED_SHORT, 0);
@@ -109,34 +114,29 @@ void Engine::render(const Player* player, const EnemyManager* enemyManager,
 	// - -Map Draw --
 	int id = 0;
 	int lastid = -1;
-	int chunkcount = map->readSquareSize();
-	const MapChunk* chunks = map->getChunks();
-	
-	//backgrounds
-	for (int n = 0; n < chunkcount; n++)
-	{
-		if(chunks[n].chunkBackground)
-		{
-			id = chunks[n].chunkBackground->bindWorldMat(&tempshader, &uniformModel);
-			if(id != lastid)
-				facecount = content->bindMapObj(id); //This will be the same
-			glDrawElements(GL_TRIANGLES, facecount * 3, GL_UNSIGNED_SHORT, 0);
-			lastid = id;
-		}
-	}
+
+	int size = map->getSize();
+	GameObject** gameObjects = map->getObjects();
+	const GameObject* background = map->getBackground();
+
+	id = background->bindWorldMat(&tempshader, &uniformModel);
+	if (id != lastid)
+		facecount = content->bindMapObj(id); //This will be the same
+	glDrawElements(GL_TRIANGLES, facecount * 3, GL_UNSIGNED_SHORT, 0);
+	lastid = id;
 	lastid = -1;
 	//world objects
-	for (int n = 0; n < chunkcount; n++)
+
+	for (int i = 0; i < size; i++)
 	{
-		for (int k = 0; k < chunks[n].size; k++)
-		{
-			id = chunks[n].worldObjs[k].bindWorldMat(&tempshader, &uniformModel);
-			if (id != lastid)
-				facecount = content->bindMapObj(id); //This will be changed to AnimationManager, to get the animated meshes
-			glDrawElements(GL_TRIANGLES, facecount * 3, GL_UNSIGNED_SHORT, 0);
-			lastid = id;
-		}
+		id = gameObjects[i]->bindWorldMat(&tempshader, &uniformModel);
+		if (id != lastid)
+			facecount = content->bindMapObj(id); //This will be changed to AnimationManager, to get the animated meshes
+		glDrawElements(GL_TRIANGLES, facecount * 3, GL_UNSIGNED_SHORT, 0);
+		lastid = id;
+
 	}
+	
 }
 
 void Engine::CompileErrorPrint(GLuint* shader)

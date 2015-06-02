@@ -2,27 +2,37 @@
 
 Map::~Map()
 {
-	delete[] chunks;
+	delete background;
+	for (int i = 0; i < size; i++)
+		delete worldObjs[i];
+	delete[] worldObjs;
 }
 
 void Map::init()
 {
-	width = 1;
-	height = 1;
-	chunks = new MapChunk[readSquareSize()];
-	for (int n = 0; n < readSquareSize(); n++)
-	{
-		chunks[n].init();
-	}
+	background = new GameObject();
+	background->id = 0;
+
+	worldObjs = new GameObject*[1];
+	worldObjs[0] = new GameObject();
+	worldObjs[0]->id = 1;
+	size = 1;
+
 }
 
-int Map::readSquareSize() const
-{ 
-	return (width * height); 
-}
 
-const MapChunk* Map::getChunks() const
+GameObject** Map::getObjects() const
 {
-	return chunks;
+	return worldObjs;
+}
+
+const GameObject* Map::getBackground() const
+{
+	return background;
+}
+
+int Map::getSize() const
+{
+	return size;
 }
 

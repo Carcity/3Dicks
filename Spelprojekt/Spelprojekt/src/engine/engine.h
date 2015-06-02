@@ -9,8 +9,7 @@
 
 #include "ContentManager.h"
 #include "object.h"
-#include "../game/player.h"
-#include "../game/enemyManager.h"
+#include"CameraControl.h"
 #include "AnimationManager.h"
 #include "../game/map.h"
 
@@ -31,13 +30,14 @@ private:
 	int cameraSwapCounter = 0;
 	// </temp>
 
+	CameraControl* cam = 0;
+
 public:
 	Engine(){};
 	~Engine();
 	void init(glm::mat4* viewMatrix);
 
-	void render(const Player* player, const EnemyManager* enemyManager,
-				const Map* map, const ContentManager* content, const AnimationManager* anim);
+	void render(const Map* map, const ContentManager* content, const AnimationManager* anim);
 };
 
 #endif
