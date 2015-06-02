@@ -29,30 +29,70 @@ void Engine::init(glm::mat4* viewMat)
 	#version 410
 	layout(location = 0) in vec3 vertex_position;
 	layout(location = 1) in vec2 UV;
-	//layout(location = 2) in vec3 target_vertex_position;
-	//layout (location = 3) in vec2 target_UV;
 
 	layout(location = 0) out vec2 UVCord;
 
-	uniform mat4 modelMatrix;
-	uniform mat4 VP;
-
-	//uniform float anim_weight;
+	//uniform mat4 modelMatrix;
+	//uniform mat4 VP;
 
 	void main () 
 	{
-		//Animationer
-		//float weightDif = 1 - anim_weight;
-		//clamp(weightDif, 0.0, 1.0);
-
-		//float sum_weight = anim_weight + weightDif;
-
-		//float anim_factor = anim_weight / sum_weight;
-		//float normal_factor = weightDif / sum_weight;
-		vec3 position = vertex_position;// * normal_factor + target_vertex_position * anim_factor;
+		vec3 position = vertex_position;
 		
-		UVCord = UV;// * normal_factor + target_UV * anim_factor;
-		gl_Position =  VP * (vec4(position, 1.0f) * modelMatrix);
+		UVCord = UV;
+		gl_Position =  vec4(position, 1.0f);//VP * (vec4(position, 1.0f) * modelMatrix);
+	}
+)";
+
+	const char* geometry_shader = R"(
+	#version 410
+	layout(triangles) in;
+	layout(triangle_strip, max_vertices = 3) out;
+
+	in gl_PerVertex
+	{
+		vec4 gl_Position;
+		float gl_PointSize;
+		float gl_ClipDistance[];
+	}
+	gl_in[];
+
+	uniform mat4 modelMatrix;
+	uniform mat4 VP;
+	uniform vec3 ViewPoint;
+	
+	layout(location = 0) in vec2 UV[];
+
+	layout(location = 0) out vec2 UVCoord;
+
+	void main ()
+	{
+		vec3 vector0 = vec3(gl_in[1].gl_Position - gl_in[0].gl_Position);
+		vec3 vector1 = vec3(gl_in[2].gl_Position - gl_in[0].gl_Position);
+
+		vec3 myCross = normalize(cross(vector0, vector1));
+	
+		mat3 normalMat = transpose(inverse(mat3(modelMatrix)));
+		vec3 normal = normalize(normalMat * myCross);
+
+
+		//backface culling. Send the triangle into world space and decide if its facing the camera
+		vec3 viewDirectionVector = normalize(gl_in[0].gl_Position.xyz - ViewPoint);
+	
+		//If the dot product is negative, the primitive is facing away from the camera
+		float dotProduct = dot(viewDirectionVector, normal);
+
+		if(dotProduct <= 0.0)		//If its facing the wrong way, dont draw it.
+		{
+			for(int i = 0; i < gl_in.length(); i++)
+			{
+				UVCoord = UV[i];
+				gl_Position = VP * (gl_in[i].gl_Position * modelMatrix);
+				EmitVertex();
+			}
+		
+		EndPrimitive();
+		}
 	}
 )";
 
@@ -83,16 +123,24 @@ void Engine::init(glm::mat4* viewMat)
 	glCompileShader(fs);
 	CompileErrorPrint(&fs);
 
+	//Geometry shader
+	GLuint gs = glCreateShader(GL_GEOMETRY_SHADER);
+	glShaderSource(gs, 1, &geometry_shader, nullptr);
+	glCompileShader(gs);
+	CompileErrorPrint(&gs);
+
 	//link shader program (connect vs and ps)
 	tempshader = glCreateProgram();
 	glAttachShader(tempshader, vs);
 	glAttachShader(tempshader, fs);
+	glAttachShader(tempshader, gs);
 	glLinkProgram(tempshader);
 
 	LinkErrorPrint(&tempshader);
 
 	uniformModel = glGetUniformLocation(tempshader, "modelMatrix");
 	uniformVP = glGetUniformLocation(tempshader, "VP");
+
 }
 
 void Engine::render(const Map* map, const ContentManager* content, const AnimationManager* anim)
@@ -104,6 +152,10 @@ void Engine::render(const Map* map, const ContentManager* content, const Animati
 
 	glm::mat4 VP = projMatrix * *viewMatrix;
 	glProgramUniformMatrix4fv(tempshader, uniformVP, 1, false, &VP[0][0]);
+
+	GLuint ViewPoint = glGetUniformLocation(tempshader, "ViewPoint");
+	glUniform3fv(ViewPoint, 1, &cam->getPosition()[0]);
+
 
 	// -- PlayerDraw --
 	//player->bindWorldMat(&tempshader, &uniformModel);
