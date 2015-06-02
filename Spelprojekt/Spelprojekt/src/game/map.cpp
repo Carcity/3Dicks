@@ -12,6 +12,7 @@ void Map::init()
 {
 	background = new GameObject();
 	background->id = 0;
+	background->moveTo(0, 2, 0);
 
 	worldObjs = new GameObject*[1];
 	worldObjs[0] = new GameObject();

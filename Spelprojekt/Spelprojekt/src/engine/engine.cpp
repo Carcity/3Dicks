@@ -107,9 +107,9 @@ void Engine::render(const Map* map, const ContentManager* content, const Animati
 
 	// -- PlayerDraw --
 	//player->bindWorldMat(&tempshader, &uniformModel);
-	facecount = anim->bindPlayer(); //animationManager
+	//facecount = anim->bindPlayer(); //animationManager
 
-	glDrawElements(GL_TRIANGLES, facecount * 3, GL_UNSIGNED_SHORT, 0);
+	//glDrawElements(GL_TRIANGLES, facecount * 3, GL_UNSIGNED_SHORT, 0);
 
 	// - -Map Draw --
 	int id = 0;

@@ -32,6 +32,7 @@ private:
 	//temprary implementations
 	bool loadVert(std::string path);
 	bool loadBMP(std::string path); 
+	bool loadMat(std::string path);
 
 public:
 	GLuint vertexData = 0;

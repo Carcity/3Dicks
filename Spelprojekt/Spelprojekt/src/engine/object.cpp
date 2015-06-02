@@ -26,17 +26,17 @@ Object::Object(std::string pathVert, std::string pathTex, Object* obj, bool copy
 			throw;
 		else
 			vertexHost = true;
-	
+	/*
 	if (copyTex)
 	{
 		textureId = obj->textureId;
 		TEXTUREINDEXOFFSET = obj->TEXTUREINDEXOFFSET;
 	}
 	else
-		if(!loadBMP(pathTex))
+		if (!loadBMP(pathTex))
 			throw;
 		else
-			textureHost = true;
+			textureHost = true;*/
 }
 
 Object::Object(const Object& obj)
@@ -62,7 +62,7 @@ Object::Object(const Object& obj)
 
 void Object::bind()
 {
-	glActiveTexture(GL_TEXTURE0 +TEXTUREINDEXOFFSET);
+	glActiveTexture(GL_TEXTURE0 + TEXTUREINDEXOFFSET);
 	glBindTexture(GL_TEXTURE_2D, textureId);
 	glBindVertexArray(vertexAttribute);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexData);
@@ -75,14 +75,40 @@ bool Object::loadVert(std::string path)
 	std::ifstream myfile(path);
 	if (myfile.is_open())
 	{
-		
 
 		std::string sub;
-		
+		std::string imgFile = "";
+
 		while (true) {
 			if (!(getline(myfile, line))) break;
 			if (line.size() < 5)
 				continue;
+
+			//checks for mtllib
+			if (line[0] == 'm')
+			{
+				std::istringstream iss(line);
+				std::string token;
+				iss >> token;
+				if (token == "mtllib");
+				{
+					//now we know it's an mtllib, and not some other whatever
+					iss >> token;
+					imgFile = token;
+					loadMat(imgFile);
+				}
+			}
+
+			if (line[0] == 'u')
+			{
+				std::istringstream iss(line);
+				std::string token;
+				iss >> token;
+				if (token == "usemtl")
+				{
+
+				}
+			}
 			if (line[0] == 'v' && line[1] == ' ') // vertex pos
 			{
 				vert.push_back(TriangleVertex());
@@ -152,9 +178,9 @@ bool Object::loadVert(std::string path)
 						indexVERT = vert.size();
 						vert.push_back(TriangleVertex());
 						vert[indexVERT] = vert[temp];
-vert[indexVERT].u = uv[indexUV].u;
-vert[indexVERT].v = uv[indexUV].v;
-Indices[count * 3 + n] = indexVERT;
+						vert[indexVERT].u = uv[indexUV].u;
+						vert[indexVERT].v = uv[indexUV].v;
+						Indices[count * 3 + n] = indexVERT;
 					}
 					iss >> sub; // normal index
 				}
@@ -185,6 +211,92 @@ Indices[count * 3 + n] = indexVERT;
 	}
 	else //file not found
 		return false;
+}
+
+bool Object::loadMat(std::string path)
+{
+	float r, g, b;
+	r = g = b = 0;
+	std::ifstream in(path);
+	std::string imgFile = "";
+	if (in.is_open())
+	{
+		std::string line;
+		while (true)
+		{
+			if (!(getline(in, line))) break;
+			if (line.size() < 5)
+				continue;
+
+			if (line[0] == 'K' && line[1] == 'd')
+			{
+				std::istringstream iss(line);
+				std::string token;
+
+				iss >> token;
+
+				if (token == "Kd")
+				{
+
+					iss >> token;
+					r = atof(token.c_str()) * 255;
+
+					iss >> token;
+					g = atof(token.c_str()) * 255;
+
+					iss >> token;
+
+					b = atof(token.c_str()) * 255;
+				}
+			}
+
+			if (line[0] = 'm')
+			{
+				std::istringstream iss(line);
+				std::string token;
+
+				iss >> token;
+
+				if (token == "map_Kd")
+				{
+					iss >> token;
+					imgFile = token;
+					
+				}
+				
+			}
+
+		}
+	}
+	if (!loadBMP(imgFile))
+	{
+		unsigned char data[3];
+		data[0] = b;
+
+		
+		data[1] = g;//ss.str().c_str()[0];
+
+	
+		data[2] = r;// ss.str().c_str()[0];
+
+
+		// Create one OpenGL texture
+		glGenTextures(1, &textureId);
+
+		glActiveTexture(GL_TEXTURE0 + TEXTUREINDEXOFFSET);
+
+		// "Bind" the newly created texture : all future texture functions will modify this texture
+		glBindTexture(GL_TEXTURE_2D, textureId);
+
+		// Give the image to OpenGL
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_BGR, GL_UNSIGNED_BYTE, data);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	}
+
+	textureHost = true;
+	return true;
 }
 
 bool Object::loadBMP(std::string imagepath)
@@ -257,7 +369,7 @@ void Object::updateVAO(std::vector<TriangleVertex> someVerts, std::vector<GLusho
 	glBufferData(GL_ARRAY_BUFFER, sizeof(someVerts[0])* someVerts.size(), &someVerts[0], GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(someIndices[0]) * someIndices.size() , &someIndices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(someIndices[0]) * someIndices.size(), &someIndices[0], GL_STATIC_DRAW);
 	faceCount = count;
 	glEnableVertexAttribArray(indexBuffer);
 
