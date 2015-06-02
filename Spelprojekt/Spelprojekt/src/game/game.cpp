@@ -147,7 +147,7 @@ void Game::update(float deltaTime)
 	//..
 	//..
 
-	//animationManager->update();
+	animationManager->update();
 	//Render const
 	engine->render(map, content, animationManager);
 }
