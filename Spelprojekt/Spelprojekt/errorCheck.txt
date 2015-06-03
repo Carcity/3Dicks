@@ -1,1 +1,3 @@
-0(30) : error C1008: undefined variable "normal"
+Fragment info
+-------------
+0(7) : error C0000: syntax error, unexpected $undefined at token "<undefined>"

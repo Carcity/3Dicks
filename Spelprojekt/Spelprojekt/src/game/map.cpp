@@ -14,10 +14,20 @@ void Map::init()
 	background->id = 0;
 	background->moveTo(0, 2, 0);
 
-	worldObjs = new GameObject*[1];
+	worldObjs = new GameObject*[6];
 	worldObjs[0] = new GameObject();
 	worldObjs[0]->id = 1;
-	size = 1;
+	worldObjs[1] = new GameObject();
+	worldObjs[1]->id = 2;
+	worldObjs[2] = new GameObject();
+	worldObjs[2]->id = 3;
+	worldObjs[3] = new GameObject();
+	worldObjs[3]->id = 4;
+	worldObjs[4] = new GameObject();
+	worldObjs[4]->id = 5;
+	worldObjs[5] = new GameObject();
+	worldObjs[5]->id = 6;
+	size = 6;
 
 }
 

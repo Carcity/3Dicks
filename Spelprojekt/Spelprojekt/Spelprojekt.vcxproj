@@ -93,6 +93,7 @@
     <ClCompile Include="src\engine\CameraControl.cpp" />
     <ClCompile Include="src\engine\ContentManager.cpp" />
     <ClCompile Include="src\engine\engine.cpp" />
+    <ClCompile Include="src\engine\FBOHandler.cpp" />
     <ClCompile Include="src\engine\object.cpp" />
     <ClCompile Include="src\game\game.cpp" />
     <ClCompile Include="src\game\gameObject.cpp" />
@@ -106,6 +107,7 @@
     <ClInclude Include="src\engine\CameraControl.h" />
     <ClInclude Include="src\engine\ContentManager.h" />
     <ClInclude Include="src\engine\engine.h" />
+    <ClInclude Include="src\engine\FBOHandler.h" />
     <ClInclude Include="src\engine\object.h" />
     <ClInclude Include="src\game\game.h" />
     <ClInclude Include="src\game\gameObject.h" />

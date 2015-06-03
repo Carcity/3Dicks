@@ -6,6 +6,8 @@ Engine::~Engine()
 		delete cam;
 	if (viewMatrix)
 		delete viewMatrix;
+	if (fboHandler)
+		delete fboHandler;
 }
 
 void Engine::init(glm::mat4* viewMat)
@@ -23,7 +25,7 @@ void Engine::init(glm::mat4* viewMat)
 	projMatrix = glm::perspective(3.14f*0.45f, 800.f / 800.0f, 0.1f, 1000.0f);
 
 	cam = new CameraControl();
-
+	fboHandler = new FBOHandler(800, 800);
 	//Temp shader
 	const char* vertex_shader = R"(
 	#version 410
@@ -64,6 +66,7 @@ void Engine::init(glm::mat4* viewMat)
 	layout(location = 0) in vec2 UV[];
 
 	layout(location = 0) out vec2 UVCoord;
+	layout(location = 1) out vec3 normal;
 
 	void main ()
 	{
@@ -73,7 +76,7 @@ void Engine::init(glm::mat4* viewMat)
 		vec3 myCross = normalize(cross(vector0, vector1));
 	
 		mat3 normalMat = transpose(inverse(mat3(modelMatrix)));
-		vec3 normal = normalize(normalMat * myCross);
+		normal = normalize(normalMat * myCross);
 
 
 		//backface culling. Send the triangle into world space and decide if its facing the camera
@@ -99,13 +102,16 @@ void Engine::init(glm::mat4* viewMat)
 	const char* fragment_shader = R"(
 	#version 410
 	layout(location = 0) in vec2 UV;
+	layout(location = 1) in vec3 normal;
 
 	uniform sampler2D textureSample;
-	out vec4 fragment_color;
+	layout(location = 0) out vec4 fragment_color;
+	layout(location = 1) out vec3 normal_out;
 
 	void main () 
 	{
 		fragment_color = texture(textureSample,vec2(UV.s, UV.t));
+		normal_out = normal;
 	}
 )";
 
@@ -143,12 +149,61 @@ void Engine::init(glm::mat4* viewMat)
 
 }
 
+void Engine::linkDeferredTextures(GLuint program)
+{
+	GLuint loc = 0;
+	loc = glGetUniformLocation(program, "color");		//Sends in the color texture to deferred shader
+	glUniform1i(loc, 0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, fboHandler->getColor());
+
+	loc = glGetUniformLocation(program, "depth");
+	glUniform1i(loc, 1);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, fboHandler->getDepth());
+
+	loc = glGetUniformLocation(program, "normal");
+	glUniform1i(loc, 2);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, fboHandler->getNormals());
+
+	//mat3 Light = getLightMatrix();
+	//GLuint LightID = glGetUniformLocation(program, "Light"); //Sends in the light matrix to defferred shader
+	//glUniformMatrix3fv(LightID, 1, GL_FALSE, &Light[0][0]);
+}
+
+void Engine::createScreenQuad()
+{
+	GLuint vbo = 0;
+	float screenquad[] =
+	{
+		1.0f, 1.0f, 0.0f,
+		1.0f, -1.0f, 0.0f,
+		-1.0f, 1.0, 0.0f,
+		-1.0f, -1.0f, 0.0f
+	};
+	glGenVertexArrays(1, &screenQuad);
+	glBindVertexArray(screenQuad);
+
+
+	glGenBuffers(1, &vbo); // Generate our Vertex Buffer Object  
+	glBindBuffer(GL_ARRAY_BUFFER, vbo); // Bind our Vertex Buffer Object 
+
+	glEnableVertexAttribArray(0);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(screenquad), screenquad, GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW  
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT), (void*)0);
+
+
+	//delete[] screenquad;
+}
+
 void Engine::render(const Map* map, const ContentManager* content, const AnimationManager* anim)
 {
 	viewMatrix = &cam->getViewMatrix();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	int facecount = 0;
 	glUseProgram(tempshader);
+	glViewport(0, 0, 800, 800);
 
 	glm::mat4 VP = projMatrix * *viewMatrix;
 	glProgramUniformMatrix4fv(tempshader, uniformVP, 1, false, &VP[0][0]);
@@ -178,6 +233,7 @@ void Engine::render(const Map* map, const ContentManager* content, const Animati
 	lastid = id;
 	lastid = -1;
 	//world objects
+	fboHandler->bind();
 
 	for (int i = 0; i < size; i++)
 	{
@@ -188,7 +244,18 @@ void Engine::render(const Map* map, const ContentManager* content, const Animati
 		lastid = id;
 
 	}
+
+	fboHandler->unbind();
+	glViewport(0, 0, 800, 800);
 	
+	glUseProgram(fboHandler->getProgram());
+
+	linkDeferredTextures(fboHandler->getProgram());
+
+	glBindVertexArray(screenQuad);
+
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void Engine::CompileErrorPrint(GLuint* shader)
