@@ -1,14 +1,13 @@
 #include "engine.h"
+#include <vector>
+
+using namespace std;
 
 Engine::~Engine()
 {
-	if (cam)
-		delete cam;
-	if (viewMatrix)
-		delete viewMatrix;
 }
 
-void Engine::init(glm::mat4* viewMat)
+void Engine::init(CameraControl* cc)
 {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
@@ -17,12 +16,7 @@ void Engine::init(glm::mat4* viewMat)
 	//glEnable(GL_CULL_FACE);
 	//glFrontFace(GL_CCW);
 
-
-	//temp camera
-	viewMatrix = viewMat;
-	projMatrix = glm::perspective(3.14f*0.45f, 800.f / 800.0f, 0.1f, 1000.0f);
-
-	cam = new CameraControl();
+	cam = cc;
 
 	//Temp shader
 	const char* vertex_shader = R"(
@@ -93,30 +87,85 @@ void Engine::init(glm::mat4* viewMat)
 
 	uniformModel = glGetUniformLocation(tempshader, "modelMatrix");
 	uniformVP = glGetUniformLocation(tempshader, "VP");
+
+	vertex_shader = R"(
+	#version 400
+	layout(location = 0) in vec3 vertex_position;
+		
+	uniform mat4 View;
+	uniform mat4 Projection;
+
+	void main () {
+		gl_Position = vec4(vertex_position, 1.0);
+		gl_Position = View*gl_Position;
+		gl_Position = Projection*gl_Position;
+	}
+)";
+
+	fragment_shader = R"(
+	#version 400
+	out vec4 fragment_color;
+
+	void main () {
+		fragment_color = vec4(1, 0, 0, 1);
+	}
+)";
+	//create vertex shader
+	vs = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vs, 1, &vertex_shader, nullptr);
+	glCompileShader(vs);
+
+	//create fragment shader
+	fs = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fs, 1, &fragment_shader, nullptr);
+	glCompileShader(fs);
+
+	//link shader program (connect vs and ps)
+	frustumProgram = glCreateProgram();
+	glAttachShader(frustumProgram, vs);
+	glAttachShader(frustumProgram, fs);
+	glLinkProgram(frustumProgram);
+}
+
+void Engine::renderFrustum(QuadTree* qt)
+{
+	GLuint frustBuf = 0;
+	glUseProgram(frustumProgram);
+	vec3 contain[8];
+	qt->getFrustumCorners(contain);
+	glBindBuffer(GL_ARRAY_BUFFER, frustBuf);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(contain), contain, GL_STREAM_DRAW);
+	//glEnableVertexAttribArray(0);
+
+	GLuint vertexPos = glGetAttribLocation(frustumProgram, "vertex_position");
+	glVertexAttribPointer(vertexPos, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
+
+	mat4 viewMat = cam->getViewMatrix();
+	GLuint loc = glGetUniformLocation(frustumProgram, "View");
+	glUniformMatrix4fv(loc, 1, GL_FALSE, &viewMat[0][0]);
+	mat4 projMat = cam->getProjMatrix();
+	loc = glGetUniformLocation(frustumProgram, "Projection");
+	glUniformMatrix4fv(loc, 1, GL_FALSE, &projMat[0][0]);
+
+	//glDrawArrays(GL_LINE_STRIP, 0, 8);
+	//glDrawElements(GL_TRIANGLES, 8, GL_UNSIGNED_SHORT, 0);
 }
 
 void Engine::render(const Map* map, const ContentManager* content, const AnimationManager* anim)
 {
-	viewMatrix = &cam->getViewMatrix();
+	cam->updateVectors();
+	mat4 viewMatrix = cam->getViewMatrix();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	int facecount = 0;
 	glUseProgram(tempshader);
 
-	glm::mat4 VP = projMatrix * *viewMatrix;
+	mat4 VP = cam->getProjMatrix() * viewMatrix;
 	glProgramUniformMatrix4fv(tempshader, uniformVP, 1, false, &VP[0][0]);
 
-	// -- PlayerDraw --
-	//player->bindWorldMat(&tempshader, &uniformModel);
-	facecount = anim->bindPlayer(); //animationManager
-
-	glDrawElements(GL_TRIANGLES, facecount * 3, GL_UNSIGNED_SHORT, 0);
-
-	// - -Map Draw --
 	int id = 0;
 	int lastid = -1;
 
-	int size = map->getSize();
-	GameObject** gameObjects = map->getObjects();
+	vector<GameObject> gameObjects = map->getObjects();
 	const GameObject* background = map->getBackground();
 
 	id = background->bindWorldMat(&tempshader, &uniformModel);
@@ -127,16 +176,16 @@ void Engine::render(const Map* map, const ContentManager* content, const Animati
 	lastid = -1;
 	//world objects
 
-	for (int i = 0; i < size; i++)
+	for (int i = 0; i < gameObjects.size(); i++)
 	{
-		id = gameObjects[i]->bindWorldMat(&tempshader, &uniformModel);
+		id = gameObjects[i].bindWorldMat(&tempshader, &uniformModel);
 		if (id != lastid)
 			facecount = content->bindMapObj(id); //This will be changed to AnimationManager, to get the animated meshes
 		glDrawElements(GL_TRIANGLES, facecount * 3, GL_UNSIGNED_SHORT, 0);
 		lastid = id;
-
 	}
 	
+	renderFrustum(map->getQuadTree());
 }
 
 void Engine::CompileErrorPrint(GLuint* shader)

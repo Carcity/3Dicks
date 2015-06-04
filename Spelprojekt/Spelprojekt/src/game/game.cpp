@@ -89,16 +89,16 @@ void Game::init(GLFWwindow* windowRef)
 	else
 		std::cout << "glDebugMessageCallback not available" << std::endl;
 #endif
-
-	glm::mat4* viewMat = new glm::mat4(); //deleted in UserInput
+	cam = new CameraControl();
 	engine = new Engine();
-	engine->init(viewMat);
+	engine->init(cam);
 	content = new ContentManager();
 	content->init();
 	animationManager = new AnimationManager();
 	animationManager->init();
+
 	map = new Map();
-	map->init();
+	map->init(cam);
 	//cam = new CameraControl();
 
 	glfwGetCursorPos(windowRef, &lastX, &lastY);

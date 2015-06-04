@@ -6,31 +6,33 @@ int GameObject::bindWorldMat(GLuint* shaderProgram, GLuint* shaderuniform) const
 	return id;
 }
 
-void GameObject::rotate(float x, float y, float z)
+void GameObject::rotateTo(float x, float y, float z)
 {
-	//float rotx = toRad * x;
-	//float roty = toRad * y;
-	//float rotz = toRad * z;
-	float rotx =  x;
-	float roty =  y;
-	float rotz =  z;
-
 	glm::vec3 pos = glm::vec3(worldMat[0].w, worldMat[1].w, worldMat[2].w);
 
+	//move to origo
 	worldMat[0].w -= pos.x;
 	worldMat[1].w -= pos.y;
 	worldMat[2].w -= pos.z;
 
-	//rot z
-
-	//rot x
-
+	//rot X
+	worldMat *= glm::mat4(1, 0.0f, 0.0f, 0.0f,
+		0.0f, cos(x), -sin(x), 0.0f,
+		0.0f, sin(x), cos(x), 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f);
 	//rot Y
-	worldMat *= glm::mat4(cos(roty), 0.0f, -sin(roty), 0.0f,
+	worldMat *= glm::mat4(cos(y), 0.0f, -sin(y), 0.0f,
 		0.0f, 1.0f, 0.0f, 0.0f,
-		sin(roty), 0.0f, cos(roty), 0.0f,
+		sin(y), 0.0f, cos(y), 0.0f,
 		0.0f, 0.0f, 0.0f, 1.0f);
 
+	//rot Z
+	worldMat *= glm::mat4(cos(z), -sin(z), 0.0f, 0.0f,
+		sin(z), cos(z), 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f);
+
+	//move back to worldspace pos
 	worldMat[0].w += pos.x;
 	worldMat[1].w += pos.y;
 	worldMat[2].w += pos.z;

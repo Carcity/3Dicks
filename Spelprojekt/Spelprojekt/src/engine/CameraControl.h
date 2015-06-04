@@ -12,7 +12,6 @@ class CameraControl
 private:
 	float side, up;
 	vec3 position, direction, right, head;
-	void updateVectors();
 
 	mat4 secView;
 	bool secondViewTime;
@@ -26,6 +25,8 @@ public:
 	vec3 getUpVec();
 
 	void setPosition(vec3);
+
+	void updateVectors();
 };
 
 #endif

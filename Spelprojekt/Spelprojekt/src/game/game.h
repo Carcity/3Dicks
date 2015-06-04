@@ -19,6 +19,7 @@ private:
 	Engine* engine = 0;
 	ContentManager* content = 0;
 	AnimationManager* animationManager = 0;
+	CameraControl* cam = 0;
 
 	Map* map = 0;
 	//CameraControl* cam = 0;

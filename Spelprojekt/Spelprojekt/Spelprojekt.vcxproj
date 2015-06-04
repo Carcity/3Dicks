@@ -94,6 +94,7 @@
     <ClCompile Include="src\engine\ContentManager.cpp" />
     <ClCompile Include="src\engine\engine.cpp" />
     <ClCompile Include="src\engine\object.cpp" />
+    <ClCompile Include="src\engine\QuadTree.cpp" />
     <ClCompile Include="src\game\game.cpp" />
     <ClCompile Include="src\game\gameObject.cpp" />
     <ClCompile Include="src\game\map.cpp" />
@@ -107,6 +108,7 @@
     <ClInclude Include="src\engine\ContentManager.h" />
     <ClInclude Include="src\engine\engine.h" />
     <ClInclude Include="src\engine\object.h" />
+    <ClInclude Include="src\engine\QuadTree.h" />
     <ClInclude Include="src\game\game.h" />
     <ClInclude Include="src\game\gameObject.h" />
     <ClInclude Include="src\game\map.h" />

@@ -22,20 +22,22 @@ private:
 	GLuint tempshader;
 	GLuint uniformModel;
 	GLuint uniformVP;
-	glm::mat4* viewMatrix;
-	glm::mat4 projMatrix;
 	void Engine::CompileErrorPrint(GLuint* shader);
 	void Engine::LinkErrorPrint(GLuint* shaderProgram);
 	int cameraSwap = 0;
 	int cameraSwapCounter = 0;
 	// </temp>
 
+	GLuint frustumProgram;
+
 	CameraControl* cam = 0;
+
+	void renderFrustum(QuadTree* qt);
 
 public:
 	Engine(){};
 	~Engine();
-	void init(glm::mat4* viewMatrix);
+	void init(CameraControl* cc);
 
 	void render(const Map* map, const ContentManager* content, const AnimationManager* anim);
 };

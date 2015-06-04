@@ -21,7 +21,7 @@ public:
 	GameObject(int idi){ id = idi; };
 	int bindWorldMat(GLuint* shaderProgram, GLuint* shaderuniform) const;
 	
-	void rotate(float x, float y, float z);
+	void rotateTo(float x, float y, float z);
 	void translate(float x, float y, float z);
 	void translate(float x, float y);
 	void moveTo(float x, float y);

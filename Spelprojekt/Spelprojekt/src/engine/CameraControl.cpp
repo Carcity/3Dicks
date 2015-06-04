@@ -79,11 +79,8 @@ mat4 CameraControl::getProjMatrix()
 
 mat4 CameraControl::getViewMatrix()
 {
-	updateVectors();
 	if (secondViewTime)
-	{
 		return secView;
-	}
 	else
 	{
 		return lookAt(
