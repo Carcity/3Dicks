@@ -15,7 +15,7 @@ void Engine::init(glm::mat4* viewMat)
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 	glDepthMask(GL_TRUE);
-	glClearColor(0, 0, 0, 1);
+	glClearColor(0,0,0, 1);
 	//glEnable(GL_CULL_FACE);
 	//glFrontFace(GL_CCW);
 
@@ -26,6 +26,7 @@ void Engine::init(glm::mat4* viewMat)
 
 	cam = new CameraControl();
 	fboHandler = new FBOHandler(800, 800);
+	createScreenQuad();
 	//Temp shader
 	const char* vertex_shader = R"(
 	#version 410
@@ -33,9 +34,6 @@ void Engine::init(glm::mat4* viewMat)
 	layout(location = 1) in vec2 UV;
 
 	layout(location = 0) out vec2 UVCord;
-
-	//uniform mat4 modelMatrix;
-	//uniform mat4 VP;
 
 	void main () 
 	{
@@ -85,8 +83,8 @@ void Engine::init(glm::mat4* viewMat)
 		//If the dot product is negative, the primitive is facing away from the camera
 		float dotProduct = dot(viewDirectionVector, normal);
 
-		if(dotProduct <= 0.0)		//If its facing the wrong way, dont draw it.
-		{
+		//if(dotProduct <= 0.0)		//If its facing the wrong way, dont draw it.
+		//{
 			for(int i = 0; i < gl_in.length(); i++)
 			{
 				UVCoord = UV[i];
@@ -95,7 +93,7 @@ void Engine::init(glm::mat4* viewMat)
 			}
 		
 		EndPrimitive();
-		}
+		//}
 	}
 )";
 
@@ -203,7 +201,7 @@ void Engine::render(const Map* map, const ContentManager* content, const Animati
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	int facecount = 0;
 	glUseProgram(tempshader);
-	glViewport(0, 0, 800, 800);
+	
 
 	glm::mat4 VP = projMatrix * *viewMatrix;
 	glProgramUniformMatrix4fv(tempshader, uniformVP, 1, false, &VP[0][0]);
@@ -226,15 +224,16 @@ void Engine::render(const Map* map, const ContentManager* content, const Animati
 	GameObject** gameObjects = map->getObjects();
 	const GameObject* background = map->getBackground();
 
-	id = background->bindWorldMat(&tempshader, &uniformModel);
+	/*id = background->bindWorldMat(&tempshader, &uniformModel);
 	if (id != lastid)
 		facecount = content->bindMapObj(id); //This will be the same
 	glDrawElements(GL_TRIANGLES, facecount * 3, GL_UNSIGNED_SHORT, 0);
 	lastid = id;
-	lastid = -1;
+	lastid = -1;*/
 	//world objects
 	fboHandler->bind();
-
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glViewport(0, 0, 800, 800);
 	for (int i = 0; i < size; i++)
 	{
 		id = gameObjects[i]->bindWorldMat(&tempshader, &uniformModel);
@@ -247,7 +246,6 @@ void Engine::render(const Map* map, const ContentManager* content, const Animati
 
 	fboHandler->unbind();
 	glViewport(0, 0, 800, 800);
-	
 	glUseProgram(fboHandler->getProgram());
 
 	linkDeferredTextures(fboHandler->getProgram());

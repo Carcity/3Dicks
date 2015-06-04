@@ -49,7 +49,7 @@ out vec4 lighted_scene;
 void main ()
 {
 	//Ska andras
-	vec4 mySample = texture(depth, vec2(texcoord.s, texcoord.t));
+	vec4 mySample = texture(normal, vec2(texcoord.s, texcoord.t));
 	lighted_scene = mySample;
 }
 )";
