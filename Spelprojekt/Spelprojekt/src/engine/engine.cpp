@@ -27,6 +27,8 @@ void Engine::init(glm::mat4* viewMat)
 	cam = new CameraControl();
 	fboHandler = new FBOHandler(800, 800);
 	createScreenQuad();
+	
+	createLights();
 	//Temp shader
 	const char* vertex_shader = R"(
 	#version 410
@@ -165,6 +167,9 @@ void Engine::linkDeferredTextures(GLuint program)
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, fboHandler->getNormals());
 
+	GLuint ViewPoint = glGetUniformLocation(program, "eyepos");
+	glUniform3fv(ViewPoint, 1, &cam->getPosition()[0]);
+
 	//mat3 Light = getLightMatrix();
 	//GLuint LightID = glGetUniformLocation(program, "Light"); //Sends in the light matrix to defferred shader
 	//glUniformMatrix3fv(LightID, 1, GL_FALSE, &Light[0][0]);
@@ -193,6 +198,33 @@ void Engine::createScreenQuad()
 
 
 	//delete[] screenquad;
+}
+
+void Engine::createLights()
+{
+	//including lights that cast shadows
+
+	
+
+	spotlight = new SpotLight[1];
+	nrOfSpotLights = 1;
+
+	spotlight[0].Color = vec3(1.0f, 1.0f, 1.0f);
+	spotlight[0].Position = vec3(5.0f, 2.0f, 5.0f);
+	spotlight[0].Direction = normalize(vec3(-3.0f, -1.0f, -3.0f));
+	spotlight[0].DiffuseIntensity = 1.00f;
+	spotlight[0].AmbientIntensity = 0.2f;
+
+
+}
+
+void Engine::linkLights()
+{
+	GLuint eyepos, nrOfSpotlights;
+	eyepos = glGetUniformLocation(fboHandler->getProgram(), "eyepos");
+	nrOfSpotlights = glGetUniformLocation(fboHandler->getProgram(), "eyepos");
+	glProgramUniform3fv(fboHandler->getProgram(), eyepos, 1, &cam->getPosition()[0]);
+	glProgramUniform1i(fboHandler->getProgram(), nrOfSpotlights, nrOfSpotlights);
 }
 
 void Engine::render(const Map* map, const ContentManager* content, const AnimationManager* anim)
@@ -224,16 +256,18 @@ void Engine::render(const Map* map, const ContentManager* content, const Animati
 	GameObject** gameObjects = map->getObjects();
 	const GameObject* background = map->getBackground();
 
-	/*id = background->bindWorldMat(&tempshader, &uniformModel);
+	fboHandler->bind();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glViewport(0, 0, 800, 800);
+
+	id = background->bindWorldMat(&tempshader, &uniformModel);
 	if (id != lastid)
 		facecount = content->bindMapObj(id); //This will be the same
 	glDrawElements(GL_TRIANGLES, facecount * 3, GL_UNSIGNED_SHORT, 0);
 	lastid = id;
-	lastid = -1;*/
+	lastid = -1;
 	//world objects
-	fboHandler->bind();
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glViewport(0, 0, 800, 800);
+	
 	for (int i = 0; i < size; i++)
 	{
 		id = gameObjects[i]->bindWorldMat(&tempshader, &uniformModel);
@@ -249,7 +283,7 @@ void Engine::render(const Map* map, const ContentManager* content, const Animati
 	glUseProgram(fboHandler->getProgram());
 
 	linkDeferredTextures(fboHandler->getProgram());
-
+	linkLights();
 	glBindVertexArray(screenQuad);
 
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -278,7 +312,7 @@ void Engine::CompileErrorPrint(GLuint* shader)
 		myfile.close();
 
 		// Provide the infolog in whatever manor you deem best.
-		// Exit with failure.
+		// Exit with failure.9
 		glDeleteShader(*shader); // Don't leak the shader.
 		throw;
 	}

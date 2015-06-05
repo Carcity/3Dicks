@@ -36,7 +36,7 @@ void main ()
 	texcoord = vec2(clamp(vertex_position.x,0,1), clamp(vertex_position.y,0,1));
 }
 )";
-	const char* fragment_shader = R"(
+const char* fragment_shader = R"(
 #version 400
 uniform sampler2D color;
 uniform sampler2D normal;
@@ -46,11 +46,96 @@ uniform sampler2D depth;
 in vec2 texcoord;
 out vec4 lighted_scene;
 
+uniform vec3 eyepos;
+float gSpecularPower = 20;
+	float gMatSpecularIntensity = 0.4;
+
+struct SpotLight
+	{
+		vec3 Color;
+		float DiffuseIntensity;
+		vec3 Position;
+		float AmbientIntensity;
+		vec3 Direction;
+		float Cutoff;
+		float linear;
+		float constant;
+		float exp;
+	};
+
+	vec4 Position0;
+SpotLight gSpotLight;
+
+vec4 CalcLightInternal(SpotLight l, vec3 LightDirection, vec3 Normal)                   
+	{                                                                                           
+		vec4 AmbientColor = vec4(l.Color, 1.0f) * l.AmbientIntensity;                   
+		float DiffuseFactor = dot(Normal, -LightDirection);                                     
+                                                                                            
+		vec4 DiffuseColor  = vec4(0, 0, 0, 0);                                            
+		vec4 SpecularColor = vec4(0, 0, 0, 0);                                                  
+                                                                                            
+		if (DiffuseFactor > 0) 
+		{                                                                
+			DiffuseColor = vec4(l.Color, 1.0f) * l.DiffuseIntensity * DiffuseFactor;    
+                                                                                            
+			vec3 VertexToEye = normalize(eyepos - Position0.xyz);                             
+			vec3 LightReflect = normalize(reflect(LightDirection, Normal));                     
+			float SpecularFactor = dot(VertexToEye, LightReflect);                              
+			SpecularFactor = pow(SpecularFactor, gSpecularPower);                               
+			if (SpecularFactor > 0) 
+			{                                                           
+				SpecularColor = vec4(l.Color, 1.0f) * gMatSpecularIntensity * SpecularFactor;                         
+			}                                                                                   
+		}                                                                                                                                                                     
+		return (AmbientColor + DiffuseColor + SpecularColor);                                   
+	}               
+	
+	vec4 CalcPointLight(SpotLight l, vec3 Normal)
+	{
+		vec3 LightDirection = Position0.xyz - l.Position;
+		float Distance = length(LightDirection);
+		LightDirection = normalize(LightDirection);    
+	
+		//return (CalcLightInternal(l, LightDirection, Normal)); 
+		vec4 Color = vec4(CalcLightInternal(l, LightDirection, Normal)); 
+		float Attenuation =  l.constant + l.linear * Distance + l.exp * Distance * Distance; 
+		return Color / Attenuation;                           
+	}                                                                                           
+                                                                                            
+	vec4 CalcSpotLight(SpotLight l, vec3 Normal)                                                
+	{                                                                                           
+		vec3 LightToPixel = normalize(Position0.xyz - l.Position);                             
+		float SpotFactor = dot(LightToPixel, l.Direction);                                      
+                                                                                            
+		if (SpotFactor > l.Cutoff) {                                                            
+			vec4 Color = CalcPointLight(l, Normal);                             
+			return Color * (1.0 - (1.0 - SpotFactor) * 1.0/(1.0 - l.Cutoff));                   
+		}                                                                                       
+		else {                                                                                  
+			return vec4(0,0,0,0);                                                               
+		}     
+	}  	
+
 void main ()
 {
 	//Ska andras
-	vec4 mySample = texture(normal, vec2(texcoord.s, texcoord.t));
-	lighted_scene = mySample;
+	gSpotLight.Color = vec3(1,1,1);
+	gSpotLight.DiffuseIntensity = 1;
+	gSpotLight.AmbientIntensity = 0.2f;
+	gSpotLight.Position = vec3(5,2,5);
+	gSpotLight.Direction = normalize(vec3(-3, -1, -3));//normalize(vec3(0.22f, -0.33f, 0.44f));
+	gSpotLight.Cutoff = 0.75f;
+	gSpotLight.constant = 1.0f;
+	gSpotLight.linear = 0.0f;
+	gSpotLight.exp = 0.0f;
+
+	
+
+
+	vec4 mySample = texture(color, vec2(texcoord.s, texcoord.t));
+	Position0 = texture(depth, vec2(texcoord.s, texcoord.t));
+	vec4 normal0 = texture(normal, vec2(texcoord.s, texcoord.t));
+	lighted_scene = mySample * CalcSpotLight(gSpotLight, normal0.xyz);
 }
 )";
 

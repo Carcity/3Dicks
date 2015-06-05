@@ -249,8 +249,8 @@ bool Object::loadMat(std::string path)
 					b = atof(token.c_str()) * 255;
 				}
 			}
-
-			if (line[0] = 'm')
+			
+			if (line[0] == 'm')
 			{
 				std::istringstream iss(line);
 				std::string token;

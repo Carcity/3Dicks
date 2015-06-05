@@ -13,6 +13,7 @@
 #include "AnimationManager.h"
 #include "../game/map.h"
 #include "FBOHandler.h"
+#include "SpotLight.h"
 
 #include "../Align16.h"
 
@@ -37,6 +38,11 @@ private:
 	FBOHandler* fboHandler;
 	GLuint screenQuad;
 	void createScreenQuad();
+
+	SpotLight* spotlight;
+	int nrOfSpotLights;
+	void createLights();
+	void linkLights();
 
 public:
 	Engine(){};
