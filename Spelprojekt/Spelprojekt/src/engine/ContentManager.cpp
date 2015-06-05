@@ -31,10 +31,10 @@ void ContentManager::loadPlayer()
 	if (player) //only call once
 		throw;
 	//this gon be two objects
-	Object** playerAn = new Object*[2];
+	/*Object** playerAn = new Object*[2];
 	playerAn[0] = new Object("src/meshes/PlayerBase.v", "src/textures/black.bmp");
 	playerAn[1] = new Object("src/meshes/PlayerWalk.v", "", playerAn[0], false, true);
-	player = new Object("src/meshes/PlayerWalk.v", "src/textures/black.bmp");//new Animation(playerAn, 2, .5f);// = new Object("src/meshes/PlayerBase.v", "src/textures/HEIL.bmp");
+	player = new Object("src/meshes/PlayerWalk.v", "src/textures/black.bmp");//new Animation(playerAn, 2, .5f);// = new Object("src/meshes/PlayerBase.v", "src/textures/HEIL.bmp");*/
 }
 
 void ContentManager::loadMapObjs()
@@ -46,7 +46,7 @@ void ContentManager::loadMapObjs()
 	mapObjs = new Object*[mapObjCount]();
 
 	mapObjs[0] = new Object("src/meshes/planeVerticalF.v", "src/textures/grid.bmp");
-	mapObjs[1] = new Object("src/meshes/BaseCube.v", "src/textures/black.bmp");
+	mapObjs[1] = new Object("src/meshes/BaseCube.v", "src/textures/red.bmp");
 
 }
 

@@ -23,29 +23,17 @@ void Engine::init(CameraControl* cc)
 	#version 410
 	layout(location = 0) in vec3 vertex_position;
 	layout(location = 1) in vec2 UV;
-	//layout(location = 2) in vec3 target_vertex_position;
-	//layout (location = 3) in vec2 target_UV;
 
 	layout(location = 0) out vec2 UVCord;
 
 	uniform mat4 modelMatrix;
 	uniform mat4 VP;
 
-	//uniform float anim_weight;
-
 	void main () 
 	{
-		//Animationer
-		//float weightDif = 1 - anim_weight;
-		//clamp(weightDif, 0.0, 1.0);
-
-		//float sum_weight = anim_weight + weightDif;
-
-		//float anim_factor = anim_weight / sum_weight;
-		//float normal_factor = weightDif / sum_weight;
-		vec3 position = vertex_position;// * normal_factor + target_vertex_position * anim_factor;
+		vec3 position = vertex_position;
 		
-		UVCord = UV;// * normal_factor + target_UV * anim_factor;
+		UVCord = UV;
 		gl_Position =  VP * (vec4(position, 1.0f) * modelMatrix);
 	}
 )";
@@ -88,7 +76,7 @@ void Engine::init(CameraControl* cc)
 	uniformModel = glGetUniformLocation(tempshader, "modelMatrix");
 	uniformVP = glGetUniformLocation(tempshader, "VP");
 
-	vertex_shader = R"(
+	const char* frust_vertex_shader = R"(
 	#version 400
 	layout(location = 0) in vec3 vertex_position;
 		
@@ -102,7 +90,7 @@ void Engine::init(CameraControl* cc)
 	}
 )";
 
-	fragment_shader = R"(
+	const char* frust_fragment_shader = R"(
 	#version 400
 	out vec4 fragment_color;
 
@@ -111,28 +99,33 @@ void Engine::init(CameraControl* cc)
 	}
 )";
 	//create vertex shader
-	vs = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vs, 1, &vertex_shader, nullptr);
-	glCompileShader(vs);
+	GLuint fvs = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(fvs, 1, &frust_vertex_shader, nullptr);
+	glCompileShader(fvs);
+	CompileErrorPrint(&fvs);
 
 	//create fragment shader
-	fs = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fs, 1, &fragment_shader, nullptr);
-	glCompileShader(fs);
+	GLuint ffs = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(ffs, 1, &frust_fragment_shader, nullptr);
+	glCompileShader(ffs);
+	CompileErrorPrint(&ffs);
 
 	//link shader program (connect vs and ps)
 	frustumProgram = glCreateProgram();
-	glAttachShader(frustumProgram, vs);
-	glAttachShader(frustumProgram, fs);
+	glAttachShader(frustumProgram, fvs);
+	glAttachShader(frustumProgram, ffs);
 	glLinkProgram(frustumProgram);
 }
 
 void Engine::renderFrustum(QuadTree* qt)
 {
+	
 	GLuint frustBuf = 0;
 	glUseProgram(frustumProgram);
 	vec3 contain[8];
 	qt->getFrustumCorners(contain);
+	//This rebinding of buffer data crashes the game, cause it changes data, that it for some reason can't change back when it tries to draw the normal objet
+
 	glBindBuffer(GL_ARRAY_BUFFER, frustBuf);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(contain), contain, GL_STREAM_DRAW);
 	//glEnableVertexAttribArray(0);
@@ -169,8 +162,9 @@ void Engine::render(const Map* map, const ContentManager* content, const Animati
 	const GameObject* background = map->getBackground();
 
 	id = background->bindWorldMat(&tempshader, &uniformModel);
-	if (id != lastid)
-		facecount = content->bindMapObj(id); //This will be the same
+
+	//Den kan rita bakgrunden i en frame, sen dör den Vad händer efter första framen?
+	facecount = content->bindMapObj(id); //This will be the same
 	glDrawElements(GL_TRIANGLES, facecount * 3, GL_UNSIGNED_SHORT, 0);
 	lastid = id;
 	lastid = -1;
@@ -185,7 +179,7 @@ void Engine::render(const Map* map, const ContentManager* content, const Animati
 		lastid = id;
 	}
 	
-	renderFrustum(map->getQuadTree());
+	//renderFrustum(map->getQuadTree());
 }
 
 void Engine::CompileErrorPrint(GLuint* shader)

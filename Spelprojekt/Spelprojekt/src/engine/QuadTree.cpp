@@ -40,15 +40,15 @@ void QuadTree::createQuads(Quad* prevRoot, int level)
 	}
 
 	prevRoot->children[1] = new Quad();
-	prevRoot->children[1]->corners[NWU] = vec3((prevRoot->corners[NWU].x + prevRoot->corners[NEU].x) *0.5f, prevRoot->corners[NWU].y, prevRoot->corners[NWU].z);
+	prevRoot->children[1]->corners[NWU] = vec3(prevRoot->children[0]->corners[NEU].x, prevRoot->corners[NWU].y, prevRoot->corners[NWU].z);
 	prevRoot->children[1]->corners[NEU] = prevRoot->corners[NEU];
 	prevRoot->children[1]->corners[SEU] = vec3(prevRoot->corners[NEU].x, prevRoot->corners[NEU].y, (prevRoot->corners[NEU].z + prevRoot->corners[SEU].z)*0.5f);
 	//Middle point, same as earlier
-	prevRoot->children[1]->corners[SWU] = vec3(prevRoot->children[0]->corners[NEU].x, prevRoot->corners[NWU].y, prevRoot->children[0]->corners[SWU].z);
+	prevRoot->children[1]->corners[SWU] = vec3(prevRoot->children[0]->corners[SEU].x, prevRoot->corners[NWU].y, prevRoot->children[0]->corners[SEU].z);
 	prevRoot->children[1]->corners[NWD] = vec3((prevRoot->corners[NWD].x + prevRoot->corners[NED].x) *0.5f, prevRoot->corners[NWD].y, prevRoot->corners[NWD].z);
 	prevRoot->children[1]->corners[NED] = prevRoot->corners[NED];
 	prevRoot->children[1]->corners[SED] = vec3(prevRoot->corners[NED].x, prevRoot->corners[NED].y, (prevRoot->corners[NED].z + prevRoot->corners[SED].z)*0.5f);
-	prevRoot->children[1]->corners[SWD] = vec3(prevRoot->children[0]->corners[NED].x, prevRoot->corners[NWD].y, prevRoot->children[0]->corners[SWD].z);
+	prevRoot->children[1]->corners[SWD] = vec3(prevRoot->children[0]->corners[SED].x, prevRoot->corners[NWD].y, prevRoot->children[0]->corners[SED].z);
 	if (level < levels)
 	{
 		createQuads(prevRoot->children[1], level + 1);
@@ -59,14 +59,14 @@ void QuadTree::createQuads(Quad* prevRoot, int level)
 	}
 
 	prevRoot->children[2] = new Quad();
-	prevRoot->children[2]->corners[NWU] = vec3(prevRoot->children[0]->corners[NEU].x, prevRoot->corners[NWU].y, prevRoot->children[0]->corners[SWU].z);
-	prevRoot->children[2]->corners[NEU] = vec3(prevRoot->corners[NEU].x, prevRoot->corners[NEU].y, (prevRoot->corners[NEU].z + prevRoot->corners[SEU].z)*0.5f);
+	prevRoot->children[2]->corners[NWU] = vec3(prevRoot->children[0]->corners[SEU].x, prevRoot->corners[NWU].y, prevRoot->children[0]->corners[SEU].z);
+	prevRoot->children[2]->corners[NEU] = vec3(prevRoot->children[1]->corners[SEU].x, prevRoot->corners[NEU].y, prevRoot->children[0]->corners[SEU].z);
 	prevRoot->children[2]->corners[SEU] = prevRoot->corners[SEU];
-	prevRoot->children[2]->corners[SWU] = vec3((prevRoot->corners[SWU].x + prevRoot->corners[SEU].x) *0.5f, prevRoot->corners[SWU].y, prevRoot->corners[SWU].z);
-	prevRoot->children[2]->corners[NWD] = vec3(prevRoot->children[0]->corners[NED].x, prevRoot->corners[NWD].y, prevRoot->children[0]->corners[SWD].z);
-	prevRoot->children[2]->corners[NED] = vec3(prevRoot->corners[NED].x, prevRoot->corners[NED].y, (prevRoot->corners[NED].z + prevRoot->corners[SED].z)*0.5f);
+	prevRoot->children[2]->corners[SWU] = vec3(prevRoot->children[2]->corners[NWU].x, prevRoot->corners[SWU].y, prevRoot->corners[SWU].z);
+	prevRoot->children[2]->corners[NWD] = vec3(prevRoot->children[0]->corners[SED].x, prevRoot->corners[NWD].y, prevRoot->children[0]->corners[SED].z);
+	prevRoot->children[2]->corners[NED] = vec3(prevRoot->children[1]->corners[SED].x, prevRoot->corners[NED].y, prevRoot->children[1]->corners[SED].z);
 	prevRoot->children[2]->corners[SED] = prevRoot->corners[SED];
-	prevRoot->children[2]->corners[SWD] = vec3((prevRoot->corners[SWD].x + prevRoot->corners[SED].x) *0.5f, prevRoot->corners[SWD].y, prevRoot->corners[SWD].z);
+	prevRoot->children[2]->corners[SWD] = vec3(prevRoot->children[2]->corners[NWD].x, prevRoot->corners[SWD].y, prevRoot->corners[SWD].z);
 
 	if (level < levels)
 	{
@@ -78,13 +78,13 @@ void QuadTree::createQuads(Quad* prevRoot, int level)
 	}
 
 	prevRoot->children[3] = new Quad();
-	prevRoot->children[3]->corners[NWU] = vec3(prevRoot->corners[NWU].x, prevRoot->corners[NWU].y, (prevRoot->corners[NWU].z + prevRoot->corners[SWU].z)*0.5f);
-	prevRoot->children[3]->corners[NEU] = vec3(prevRoot->children[0]->corners[NEU].x, prevRoot->corners[NWU].y, prevRoot->children[0]->corners[SWU].z);
-	prevRoot->children[3]->corners[SEU] = vec3((prevRoot->corners[SWU].x + prevRoot->corners[SEU].x) *0.5f, prevRoot->corners[SWU].y, prevRoot->corners[SWU].z);
+	prevRoot->children[3]->corners[NWU] = vec3(prevRoot->children[0]->corners[SWU].x, prevRoot->corners[NWU].y, prevRoot->children[0]->corners[SWU].z);
+	prevRoot->children[3]->corners[NEU] = vec3(prevRoot->children[0]->corners[SEU].x, prevRoot->corners[NWU].y, prevRoot->children[0]->corners[SEU].z);
+	prevRoot->children[3]->corners[SEU] = vec3(prevRoot->children[2]->corners[SWU].x, prevRoot->corners[SWU].y, prevRoot->children[2]->corners[SWU].z);
 	prevRoot->children[3]->corners[SWU] = prevRoot->corners[SWU];
-	prevRoot->children[3]->corners[NWD] = vec3(prevRoot->corners[NWD].x, prevRoot->corners[NWD].y, (prevRoot->corners[NWD].z + prevRoot->corners[SWD].z)*0.5f);
-	prevRoot->children[3]->corners[NED] = vec3(prevRoot->children[0]->corners[NED].x, prevRoot->corners[NWD].y, prevRoot->children[0]->corners[SWD].z);
-	prevRoot->children[3]->corners[SED] = vec3((prevRoot->corners[SWD].x + prevRoot->corners[SED].x) *0.5f, prevRoot->corners[SWD].y, prevRoot->corners[SWD].z);
+	prevRoot->children[3]->corners[NWD] = vec3(prevRoot->children[0]->corners[SWD].x, prevRoot->corners[NWD].y, prevRoot->children[0]->corners[SWD].z);
+	prevRoot->children[3]->corners[NED] = vec3(prevRoot->children[0]->corners[SED].x, prevRoot->corners[NWD].y, prevRoot->children[0]->corners[SED].z);
+	prevRoot->children[3]->corners[SED] = vec3(prevRoot->children[2]->corners[SWD].x, prevRoot->corners[SWD].y, prevRoot->children[2]->corners[SWD].z);
 	prevRoot->children[3]->corners[SWD] = prevRoot->corners[SWD];
 	if (level < levels)
 	{
@@ -270,6 +270,7 @@ void QuadTree::checkQuads(Quad* quad, Plane pl[6], vector<GameObject>* ret)
 				out = true;
 
 		//}
+	}
 		//any of the dot products are negative
 		if (out)
 		{
@@ -294,7 +295,7 @@ void QuadTree::checkQuads(Quad* quad, Plane pl[6], vector<GameObject>* ret)
 				}
 			}
 		}
-	}
+	
 }
 
 void QuadTree::copyChildren(Quad* quad, const Quad* copy)
