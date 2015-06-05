@@ -1,0 +1,496 @@
+//--------------------------------------------------------------------------------------
+// BTH - Stefan Petersson 2014.
+//--------------------------------------------------------------------------------------
+#include <windows.h>
+#include <vector>
+#include <fstream>
+#include "bth_image.h"
+
+#include <gl/glew.h>
+#include <gl/GL.h>
+
+#define GLM_FORCE_RADIANS
+#include <glm\glm.hpp>
+#include <glm\gtc\matrix_transform.hpp>
+
+#pragma comment(lib, "opengl32.lib")
+#pragma comment(lib, "glew32.lib")
+
+HWND InitWindow(HINSTANCE hInstance);
+LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+HGLRC CreateOpenGLContext(HWND wndHandle);
+
+GLuint gVertexBuffer = 0;
+GLuint gVertexAttribute = 0;
+GLuint gShaderProgram = 0;
+GLuint bth_tex = 0;
+
+glm::mat4 viewMatrix = glm::lookAt(glm::vec3(0, 0, -2), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+glm::mat4 projMatrix = glm::perspective(glm::pi<float>()*0.45f, 640.f / 480.0f, 0.5f, 20.0f);
+
+float rotatedegrees = 0.0f;
+float rotateRad = 0.0f;
+const float toRad = 0.0174532925;
+
+
+#define BUFFER_OFFSET(i) ((char *)nullptr + (i))
+
+void CreateTexture()
+{
+glGenTextures(1, &bth_tex);
+glActiveTexture(GL_TEXTURE0);
+
+glBindTexture(GL_TEXTURE_2D, bth_tex);
+
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, BTH_IMAGE_WIDTH, BTH_IMAGE_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, BTH_IMAGE_DATA);
+}
+
+void CreateShaders()
+{
+const char* vertex_shader = R"(
+#version 400
+layout(location = 0) in vec3 vertex_position;
+layout(location = 1) in vec2 UV;
+out vec2 UVCord;
+void main () {
+UVCord = UV;
+vec4 vertex_matrix = vec4 (vertex_position, 1.0f);
+
+gl_Position = vertex_matrix;
+}
+)";
+
+const char* geometry_shader = R"(
+#version 400
+layout(triangles) in;
+layout(triangle_strip, max_vertices = 8) out;
+
+uniform mat4 WorldMatrix;
+uniform mat4 ViewMatrix;
+uniform mat4 ProjectionMatrix;
+uniform mat4 NormalMatrix;
+
+in vec2 UVCord[3];
+out vec2 UVs;
+out vec3 Normals;
+out vec3 Position;
+void main() 
+{
+vec3 line1 = vec3(gl_in[1].gl_Position - gl_in[0].gl_Position);
+vec3 line2 = vec3(gl_in[2].gl_Position - gl_in[0].gl_Position);
+
+for(int n = 0; n < 3; n++)
+{
+vec3 norm = normalize(cross(line1, line2));
+norm = vec3(WorldMatrix * vec4(norm, 0));
+Normals = normalize(mat3(NormalMatrix) * norm);
+vec4 temp = vec4(WorldMatrix * gl_in[n].gl_Position);
+Position = vec3(ViewMatrix * temp);
+vec4 vertex_matrix = WorldMatrix * gl_in[n].gl_Position;
+vertex_matrix = ViewMatrix * vertex_matrix;
+gl_Position = ProjectionMatrix * vertex_matrix;
+
+UVs = UVCord[n];
+EmitVertex();
+}
+EndPrimitive();
+
+for(int n = 0; n < 3; n++)
+{
+vec3 norm = normalize(cross(line1, line2));
+norm = vec3(WorldMatrix * vec4(norm, 0));
+Normals = normalize(mat3(NormalMatrix) * norm);
+vec4 temp = vec4(WorldMatrix * gl_in[n].gl_Position);
+Position = vec3(ViewMatrix * temp);
+vec4 vertex_matrix = WorldMatrix * (gl_in[n].gl_Position - vec4(0,0,1,0));
+vertex_matrix = ViewMatrix * vertex_matrix;
+gl_Position = ProjectionMatrix * vertex_matrix;
+UVs = UVCord[n];
+EmitVertex();
+}
+EndPrimitive();
+}
+)";
+
+const char* fragment_shader = R"(
+#version 400
+in vec2 UVs;
+in vec3 Normals;
+in vec3 Position;
+
+uniform sampler2D texSampler;
+
+out vec4 fragment_color;
+
+void main () {
+
+vec4 lightPosition = vec4(0,0,2,0);
+vec3 Ld = vec3(0.7f,0.7f,0.7f);
+vec3 Kd = vec3(0.0f,1.0f,1.0f);
+vec4 mySample = texture(texSampler, vec2(UVs.s, 1-UVs.t));
+vec3 textureColor = vec3(mySample.rgb);
+vec3 n = normalize(Normals); //surface normal
+vec3 s = normalize(vec3(lightPosition) - Position); 
+vec3 v = normalize(vec3(-Position));
+vec3 r = reflect(-s,n);	
+vec3 diffuseLight = Kd * max(dot(s,n), 0.0f);
+vec3 Ks = vec3(1.0f,0.0f,1.0f); //specular light
+float shinyPower = 100.0f;
+vec3 Ka = vec3(0.2f, 0.2f, 0.2f); //ambient light
+vec3 specularLight = Ks * pow(max(dot(r, v), 0.0f), shinyPower);
+vec3 light = Ld * (Ka + diffuseLight + specularLight);
+fragment_color = vec4(light* textureColor , 1);
+}
+)";
+
+GLint success = 0;
+
+//create vertex shader
+GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+glShaderSource(vs, 1, &vertex_shader, nullptr);
+glCompileShader(vs);
+
+glGetShaderiv(vs, GL_COMPILE_STATUS, &success);
+if (success == GL_FALSE)
+{
+GLint maxLength = 0;
+glGetShaderiv(vs, GL_INFO_LOG_LENGTH, &maxLength);
+
+// The maxLength includes the NULL character
+std::vector<GLchar> errorLog(maxLength);
+glGetShaderInfoLog(vs, maxLength, &maxLength, &errorLog[0]);
+
+std::fstream myfile;
+myfile.open("errorCheck.txt", std::fstream::out);
+for (int i = 0; i < maxLength; i++)
+{
+myfile << errorLog[i];
+}
+myfile.close();
+
+// Provide the infolog in whatever manor you deem best.
+// Exit with failure.
+glDeleteShader(vs); // Don't leak the shader.
+return;
+}
+
+//create geometry shader
+GLuint gs = glCreateShader(GL_GEOMETRY_SHADER);
+glShaderSource(gs, 1, &geometry_shader, nullptr);
+glCompileShader(gs);
+
+glGetShaderiv(gs, GL_COMPILE_STATUS, &success);
+if (success == GL_FALSE)
+{
+GLint maxLength = 0;
+glGetShaderiv(gs, GL_INFO_LOG_LENGTH, &maxLength);
+
+// The maxLength includes the NULL character
+std::vector<GLchar> errorLog(maxLength);
+glGetShaderInfoLog(gs, maxLength, &maxLength, &errorLog[0]);
+
+std::fstream myfile;
+myfile.open("errorCheck.txt", std::fstream::out);
+for (int i = 0; i < maxLength; i++)
+{
+myfile << errorLog[i];
+}
+myfile.close();
+// Exit with failure.
+glDeleteShader(gs); // Don't leak the shader.
+return;
+}
+
+//create fragment shader
+GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+glShaderSource(fs, 1, &fragment_shader, nullptr);
+glCompileShader(fs);
+
+glGetShaderiv(fs, GL_COMPILE_STATUS, &success);
+if (success == GL_FALSE)
+{
+GLint maxLength = 0;
+glGetShaderiv(fs, GL_INFO_LOG_LENGTH, &maxLength);
+
+// The maxLength includes the NULL character
+std::vector<GLchar> errorLog(maxLength);
+glGetShaderInfoLog(fs, maxLength, &maxLength, &errorLog[0]);
+
+std::fstream myfile;
+myfile.open("errorCheck.txt", std::fstream::out);
+for (int i = 0; i < maxLength; i++)
+{
+myfile << errorLog[i];
+}
+myfile.close();
+// Exit with failure.
+glDeleteShader(fs); // Don't leak the shader.
+return;
+}
+
+//link shader program (connect vs and ps)
+gShaderProgram = glCreateProgram();
+glAttachShader(gShaderProgram, vs);
+glAttachShader(gShaderProgram, gs);
+glAttachShader(gShaderProgram, fs);
+glLinkProgram(gShaderProgram);
+
+glGetProgramiv(gShaderProgram, GL_LINK_STATUS, &success);
+if (success == GL_FALSE)
+{
+GLint maxLength = 0;
+glGetProgramiv(gShaderProgram, GL_INFO_LOG_LENGTH, &maxLength);
+
+// The maxLength includes the NULL character
+std::vector<GLchar> errorLog(maxLength);
+glGetProgramInfoLog(gShaderProgram, maxLength, &maxLength, &errorLog[0]);
+
+std::fstream myfile;
+myfile.open("errorCheck.txt", std::fstream::out);
+for (int i = 0; i < maxLength; i++)
+{
+myfile << errorLog[i];
+}
+myfile.close();
+
+// Provide the infolog in whatever manor you deem best.
+// Exit with failure.
+glDeleteProgram(gShaderProgram); // Don't leak the shader.
+return;
+}
+}
+
+void CreateTriangleData()
+{
+struct TriangleVertex
+{
+float x, y, z;
+float u, v;
+}
+triangleVertices[4] =
+{
+//Triangle 1 bottom left
+//top left
+-0.5f, 0.5f, 1.0f,	//v0 pos  
+0.0f, 1.0f,         //v0 color
+//bot left
+-0.5f, -0.5f, 1.0f,	//v1
+0.0f, 0.0f,     //v1 color
+//top right
+0.5f, 0.5f, 1.0f, //v2
+1.0f, 1.0f,       //v2 color
+
+//Triangle 2 top right
+//bot right
+0.5f, -0.5f, 1.0f, //v3
+1.0f, 0.0f,         //v3 color
+};
+
+//create buffer and set data
+glGenBuffers(1, &gVertexBuffer);
+glBindBuffer(GL_ARRAY_BUFFER, gVertexBuffer);
+glBufferData(GL_ARRAY_BUFFER, sizeof(triangleVertices), triangleVertices, GL_STATIC_DRAW);
+
+//define vertex data layout
+glGenVertexArrays(1, &gVertexAttribute);
+glBindVertexArray(gVertexAttribute);
+glEnableVertexAttribArray(0); //the vertex attribute object will remember its enabled attributes
+glEnableVertexAttribArray(1);
+
+GLuint vertexPos = glGetAttribLocation(gShaderProgram, "vertex_position");
+glVertexAttribPointer(vertexPos, 3, GL_FLOAT, GL_FALSE, sizeof(TriangleVertex), BUFFER_OFFSET(0));
+GLuint vertexColor = glGetAttribLocation(gShaderProgram, "UV");
+glVertexAttribPointer(vertexColor, 2, GL_FLOAT, GL_FALSE, sizeof(TriangleVertex), BUFFER_OFFSET(sizeof(float)* 3));
+}
+
+void SetViewport()
+{
+glViewport(0, 0, 640, 480);
+}
+
+void Render()
+{
+//rotate
+rotatedegrees += 1;
+rotateRad = rotatedegrees*toRad; //Transform from degrees to radiens
+glm::mat4 worldMatrix = glm::mat4(cos(rotateRad), 0.0f, -sin(rotateRad), 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, sin(rotateRad), 0.0f, cos(rotateRad), 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+
+glm::mat4 normalMatrix = glm::inverse(glm::transpose(worldMatrix));
+
+glClearColor(0, 0, 0, 1);
+glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+glUseProgram(gShaderProgram);
+
+glActiveTexture(GL_TEXTURE0);
+glBindTexture(GL_TEXTURE_2D, bth_tex);
+//glBindVertexArray(gVertexAttribute);
+
+//WorldMatrix to shader as uniform matrix
+GLint myUniformLoc = glGetUniformLocation(gShaderProgram, "WorldMatrix");
+glProgramUniformMatrix4fv(gShaderProgram, myUniformLoc, 1, false, &worldMatrix[0][0]);
+
+//ViewMatrix to shader as uniform  matrix
+myUniformLoc = glGetUniformLocation(gShaderProgram, "ViewMatrix");
+glProgramUniformMatrix4fv(gShaderProgram, myUniformLoc, 1, false, &viewMatrix[0][0]);
+
+//ProjectionMatrix to shader as uniform  matrix
+myUniformLoc = glGetUniformLocation(gShaderProgram, "ProjectionMatrix");
+glProgramUniformMatrix4fv(gShaderProgram, myUniformLoc, 1, false, &projMatrix[0][0]);
+
+//NormalMatrix to shader as uniform  matrix
+myUniformLoc = glGetUniformLocation(gShaderProgram, "NormalMatrix");
+glProgramUniformMatrix4fv(gShaderProgram, myUniformLoc, 1, false, &normalMatrix[0][0]);
+
+glBindVertexArray(gVertexAttribute);
+
+// draw points 0-6 from the currently bound VAO with current in-use shader
+glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+}
+
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
+{
+MSG msg = { 0 };
+HWND wndHandle = InitWindow(hInstance); //1. Skapa fönster
+
+if (wndHandle)
+{
+HDC hDC = GetDC(wndHandle);
+HGLRC hRC = CreateOpenGLContext(wndHandle); //2. Skapa och koppla OpenGL context
+
+glewInit(); //3. Initiera The OpenGL Extension Wrangler Library (GLEW)
+
+//enable depth buffer
+glEnable(GL_DEPTH_TEST);
+glDepthFunc(GL_LEQUAL);
+glDepthMask(GL_TRUE);
+
+//glEnable(GL_CULL_FACE);
+
+SetViewport(); //4. Sätt viewport
+
+CreateShaders(); //5. Skapa vertex- och fragment-shaders
+
+CreateTriangleData(); //6. Definiera triangelvertiser, 7. Skapa vertex buffer object (VBO), 8.Skapa vertex array object (VAO)
+
+CreateTexture();
+
+ShowWindow(wndHandle, nCmdShow);
+
+while (WM_QUIT != msg.message)
+{
+if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+{
+TranslateMessage(&msg);
+DispatchMessage(&msg);
+}
+else
+{
+Render(); //9. Rendera
+SwapBuffers(hDC); //10. Växla front- och back-buffer
+}
+}
+
+wglMakeCurrent(NULL, NULL);
+ReleaseDC(wndHandle, hDC);
+wglDeleteContext(hRC);
+DestroyWindow(wndHandle);
+}
+
+return (int)msg.wParam;
+}
+
+HWND InitWindow(HINSTANCE hInstance)
+{
+WNDCLASSEX wcex = { 0 };
+wcex.cbSize = sizeof(WNDCLASSEX);
+wcex.style = CS_HREDRAW | CS_VREDRAW;
+wcex.lpfnWndProc = WndProc;
+wcex.hInstance = hInstance;
+wcex.lpszClassName = L"BTH_GL_DEMO";
+if (!RegisterClassEx(&wcex))
+return false;
+
+RECT rc = { 0, 0, 640, 480 };
+AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
+
+HWND handle = CreateWindow(
+L"BTH_GL_DEMO",
+L"BTH OpenGL Demo",
+WS_OVERLAPPEDWINDOW,
+CW_USEDEFAULT,
+CW_USEDEFAULT,
+rc.right - rc.left,
+rc.bottom - rc.top,
+nullptr,
+nullptr,
+hInstance,
+nullptr);
+
+return handle;
+}
+
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+switch (message)
+{
+case WM_DESTROY:
+PostQuitMessage(0);
+break;
+}
+return DefWindowProc(hWnd, message, wParam, lParam);
+}
+
+HGLRC CreateOpenGLContext(HWND wndHandle)
+{
+//get handle to a device context (DC) for the client area
+//of a specified window or for the entire screen
+HDC hDC = GetDC(wndHandle);
+
+//details: http://msdn.microsoft.com/en-us/library/windows/desktop/dd318286(v=vs.85).aspx
+static  PIXELFORMATDESCRIPTOR pixelFormatDesc =
+{
+sizeof(PIXELFORMATDESCRIPTOR),    // size of this pfd  
+1,                                // version number  
+PFD_DRAW_TO_WINDOW |              // support window  
+PFD_SUPPORT_OPENGL |              // support OpenGL  
+PFD_DOUBLEBUFFER |                // double buffered
+//PFD_DEPTH_DONTCARE,               // disable depth buffer <-- added by Stefan
+PFD_TYPE_RGBA,                    // RGBA type  
+32,                               // 32-bit color depth  
+0, 0, 0, 0, 0, 0,                 // color bits ignored  
+0,                                // no alpha buffer  
+0,                                // shift bit ignored  
+0,                                // no accumulation buffer  
+0, 0, 0, 0,                       // accum bits ignored  
+//0,                                // 0-bits for depth buffer <-- modified by Stefan      
+0,                                // no stencil buffer  
+0,                                // no auxiliary buffer  
+PFD_MAIN_PLANE,                   // main layer  
+0,                                // reserved  
+0, 0, 0                           // layer masks ignored  
+};
+
+//attempt to match an appropriate pixel format supported by a
+//device context to a given pixel format specification.
+int pixelFormat = ChoosePixelFormat(hDC, &pixelFormatDesc);
+
+//set the pixel format of the specified device context
+//to the format specified by the iPixelFormat index.
+SetPixelFormat(hDC, pixelFormat, &pixelFormatDesc);
+
+//create a new OpenGL rendering context, which is suitable for drawing
+//on the device referenced by hdc. The rendering context has the same
+//pixel format as the device context.
+HGLRC hRC = wglCreateContext(hDC);
+
+//makes a specified OpenGL rendering context the calling thread's current
+//rendering context. All subsequent OpenGL calls made by the thread are
+//drawn on the device identified by hdc. 
+wglMakeCurrent(hDC, hRC);
+
+return hRC;
+}

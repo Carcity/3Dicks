@@ -1,0 +1,24 @@
+﻿Build started 2015-02-09 22:44:25.
+     1>Project "C:\Users\ResQ\Desktop\02-OpenGL camera\02-OpenGL v4\Demo.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /D WIN32 /D NDEBUG /D _WINDOWS /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt Core.cpp main.cpp Obj.cpp Render.cpp Shader.cpp ShadowMapFBO.cpp SpotLight.cpp UserInput.cpp
+         Core.cpp
+     1>c:\users\resq\desktop\02-opengl camera\02-opengl v4\UserInput.h(4): fatal error C1083: Cannot open include file: 'glm\glm.hpp': No such file or directory
+         main.cpp
+     1>c:\users\resq\desktop\02-opengl camera\02-opengl v4\UserInput.h(4): fatal error C1083: Cannot open include file: 'glm\glm.hpp': No such file or directory
+         Obj.cpp
+     1>c:\users\resq\desktop\02-opengl camera\02-opengl v4\obj.h(6): fatal error C1083: Cannot open include file: 'glm\glm.hpp': No such file or directory
+         Render.cpp
+     1>c:\users\resq\desktop\02-opengl camera\02-opengl v4\Render.h(6): fatal error C1083: Cannot open include file: 'glm\glm.hpp': No such file or directory
+         Shader.cpp
+     1>c:\users\resq\desktop\02-opengl camera\02-opengl v4\Shader.h(6): fatal error C1083: Cannot open include file: 'glm\glm.hpp': No such file or directory
+         ShadowMapFBO.cpp
+     1>c:\users\resq\desktop\02-opengl camera\02-opengl v4\ShadowMapFBO.h(6): fatal error C1083: Cannot open include file: 'glm\glm.hpp': No such file or directory
+         SpotLight.cpp
+         UserInput.cpp
+     1>c:\users\resq\desktop\02-opengl camera\02-opengl v4\UserInput.h(4): fatal error C1083: Cannot open include file: 'glm\glm.hpp': No such file or directory
+     1>Done Building Project "C:\Users\ResQ\Desktop\02-OpenGL camera\02-OpenGL v4\Demo.vcxproj" (Build target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:01.19

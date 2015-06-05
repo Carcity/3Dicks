@@ -1,0 +1,48 @@
+﻿Build started 2015-06-05 11:42:27.
+     1>Project "C:\Users\kalbi_000\Documents\GitHub\3Dicks\Spelprojekt\Demo.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt Core.cpp main.cpp Obj.cpp object.cpp Render.cpp Shader.cpp ShadowMapFBO.cpp SpotLight.cpp UserInput.cpp
+         UserInput.cpp
+         SpotLight.cpp
+         ShadowMapFBO.cpp
+         Shader.cpp
+         Render.cpp
+     1>c:\users\kalbi_000\documents\github\3dicks\spelprojekt\obj.h(18): warning C4305: 'initializing' : truncation from 'double' to 'const float'
+         object.cpp
+     1>c:\users\kalbi_000\documents\github\3dicks\spelprojekt\object.cpp(94): warning C4390: ';' : empty controlled statement found; is this the intent?
+     1>c:\users\kalbi_000\documents\github\3dicks\spelprojekt\object.cpp(242): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>c:\users\kalbi_000\documents\github\3dicks\spelprojekt\object.cpp(245): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>c:\users\kalbi_000\documents\github\3dicks\spelprojekt\object.cpp(249): warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+     1>c:\users\kalbi_000\documents\github\3dicks\spelprojekt\object.cpp(274): warning C4244: '=' : conversion from 'float' to 'unsigned char', possible loss of data
+     1>c:\users\kalbi_000\documents\github\3dicks\spelprojekt\object.cpp(277): warning C4244: '=' : conversion from 'float' to 'unsigned char', possible loss of data
+     1>c:\users\kalbi_000\documents\github\3dicks\spelprojekt\object.cpp(280): warning C4244: '=' : conversion from 'float' to 'unsigned char', possible loss of data
+     1>c:\users\kalbi_000\documents\github\3dicks\spelprojekt\object.cpp(311): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\stdio.h(211) : see declaration of 'fopen'
+         Obj.cpp
+     1>c:\users\kalbi_000\documents\github\3dicks\spelprojekt\obj.h(18): warning C4305: 'initializing' : truncation from 'double' to 'const float'
+     1>c:\users\kalbi_000\documents\github\3dicks\spelprojekt\obj.cpp(29): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 12.0\vc\include\stdio.h(211) : see declaration of 'fopen'
+         main.cpp
+     1>c:\users\kalbi_000\documents\github\3dicks\spelprojekt\obj.h(18): warning C4305: 'initializing' : truncation from 'double' to 'const float'
+         Core.cpp
+     1>c:\users\kalbi_000\documents\github\3dicks\spelprojekt\obj.h(18): warning C4305: 'initializing' : truncation from 'double' to 'const float'
+     1>c:\users\kalbi_000\documents\github\3dicks\spelprojekt\core.cpp(5): warning C4316: 'Render' : object allocated on the heap may not be aligned 16
+     1>c:\users\kalbi_000\documents\github\3dicks\spelprojekt\core.cpp(25): warning C4305: '=' : truncation from 'double' to 'float'
+         Generating Code...
+     1>c:\users\kalbi_000\documents\github\3dicks\spelprojekt\shader.cpp(307): warning C4715: 'Shader::compile' : not all control paths return a value
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\kalbi_000\Documents\GitHub\3Dicks\Spelprojekt\Debug\Demo.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\kalbi_000\Documents\GitHub\3Dicks\Spelprojekt\Debug\Demo.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\kalbi_000\Documents\GitHub\3Dicks\Spelprojekt\Debug\Demo.lib" /MACHINE:X86 Debug\Core.obj
+         Debug\main.obj
+         Debug\Obj.obj
+         Debug\object.obj
+         Debug\Render.obj
+         Debug\Shader.obj
+         Debug\ShadowMapFBO.obj
+         Debug\SpotLight.obj
+         Debug\UserInput.obj
+         Demo.vcxproj -> C:\Users\kalbi_000\Documents\GitHub\3Dicks\Spelprojekt\Debug\Demo.exe
+     1>Done Building Project "C:\Users\kalbi_000\Documents\GitHub\3Dicks\Spelprojekt\Demo.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:05.89

@@ -1,0 +1,2 @@
+0(23) : error C1008: undefined variable "WorldMatrix"
+0(24) : error C1008: undefined variable "WorldMatrix"
