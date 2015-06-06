@@ -40,7 +40,7 @@ void QuadTree::createQuads(Quad* prevRoot, int level)
 	}
 
 	prevRoot->children[1] = new Quad();
-	prevRoot->children[1]->corners[NWU] = vec3(prevRoot->children[0]->corners[NEU].x, prevRoot->corners[NWU].y, prevRoot->corners[NWU].z);
+	prevRoot->children[1]->corners[NWU] = vec3(prevRoot->children[0]->corners[NEU].x, prevRoot->corners[NWU].y, prevRoot->children[0]->corners[NWU].z);
 	prevRoot->children[1]->corners[NEU] = prevRoot->corners[NEU];
 	prevRoot->children[1]->corners[SEU] = vec3(prevRoot->corners[NEU].x, prevRoot->corners[NEU].y, (prevRoot->corners[NEU].z + prevRoot->corners[SEU].z)*0.5f);
 	//Middle point, same as earlier
@@ -60,7 +60,7 @@ void QuadTree::createQuads(Quad* prevRoot, int level)
 
 	prevRoot->children[2] = new Quad();
 	prevRoot->children[2]->corners[NWU] = vec3(prevRoot->children[0]->corners[SEU].x, prevRoot->corners[NWU].y, prevRoot->children[0]->corners[SEU].z);
-	prevRoot->children[2]->corners[NEU] = vec3(prevRoot->children[1]->corners[SEU].x, prevRoot->corners[NEU].y, prevRoot->children[0]->corners[SEU].z);
+	prevRoot->children[2]->corners[NEU] = vec3(prevRoot->children[1]->corners[SEU].x, prevRoot->corners[NEU].y, prevRoot->children[1]->corners[SEU].z);
 	prevRoot->children[2]->corners[SEU] = prevRoot->corners[SEU];
 	prevRoot->children[2]->corners[SWU] = vec3(prevRoot->children[2]->corners[NWU].x, prevRoot->corners[SWU].y, prevRoot->corners[SWU].z);
 	prevRoot->children[2]->corners[NWD] = vec3(prevRoot->children[0]->corners[SED].x, prevRoot->corners[NWD].y, prevRoot->children[0]->corners[SED].z);
@@ -139,7 +139,7 @@ bool QuadTree::addObject(GameObject &obj)
 void QuadTree::getFrustumCorners(vec3 container[])
 {
 	float fov = 3.14159f*0.45f;
-	float ratio = 640.0f / 480.0f;
+	float ratio = 800.0f / 800.0f;
 	float zNear = 0.5f;
 	float zFar = 100.0f;
 
@@ -194,12 +194,13 @@ vector<GameObject> QuadTree::checkQuadTree()
 	pl[0] = Plane(ntr, ntl, ftl);//top plane
 	pl[1] = Plane(nbl, nbr, fbr);//bottom plane
 	pl[2] = Plane(ntl, nbl, fbl);//left plane
-	pl[3] = Plane(nbr, ntr, fbr);//rght plane
+	pl[3] = Plane(ntr, nbr, fbr);//rght plane
 	pl[4] = Plane(ntl, ntr, nbr);//near plne
 	pl[5] = Plane(ftr, ftl, fbl);//IRL Zora in the farplane
 
 	//Makes sure all the normals are pointing into the frustrum
 	//Top and bottom planes
+	
 	if (ftr.y > fbl.y) //If the top plane is actually above the bottom plane. This is always true unless we're upside down
 	{
 		if (pl[0].normal.y > 0) //If the normal of the top plane has a positive y, aka, it is pointing out of the frustrum
@@ -266,11 +267,13 @@ void QuadTree::checkQuads(Quad* quad, Plane pl[6], vector<GameObject>* ret)
 		//for (int k = 0; k < 8 && !out; k++) {
 
 			// is the corner outside or inside
-			if (cos(pl[i].distance(quad->getCenter())) >= 0)//quad->corners[k])) >= 0)
+		
+			if(dot(pl[i].center, quad->getCenter()) < 0)//if (cos(pl[i].distance(quad->getCenter())) >= 0)//quad->corners[k])) >= 0)
 				out = true;
-
+			//if (dot(pl[i].point))
 		//}
 	}
+	//out = false;
 		//any of the dot products are negative
 		if (out)
 		{

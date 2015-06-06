@@ -74,7 +74,7 @@ void CameraControl::updateVectors()
 
 mat4 CameraControl::getProjMatrix()
 {
-	return perspective(3.14159f*0.45f, 640.0f / 480.0f, 0.5f, 100.0f);
+	return perspective(3.14159f*0.45f, 800.0f/800.0f, 0.5f, 100.0f);
 }
 
 mat4 CameraControl::getViewMatrix()

@@ -68,6 +68,7 @@ struct Quad
 struct Plane
 {
 	vec3 point, normal;
+	vec3 center;
 	float d;
 	Plane()
 	{
@@ -81,6 +82,7 @@ struct Plane
 		aux1 = v1 - v2;
 		aux2 = v3 - v2;
 
+		center = vec3((v1.x + v3.x) * 0.5f, (v1.y + v3.y) * 0.5f, (v1.z + v3.z) * 0.5f);
 		normal = cross(aux2, aux1);
 
 		normal = normalize(normal);
