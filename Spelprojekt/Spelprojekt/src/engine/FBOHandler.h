@@ -1,9 +1,9 @@
 #ifndef FBOHANDLER_H
 #define FBOHANDLER_H
-#include <gl/glew.h>
-#include <gl/GL.h>
 #include <string>
 #include <fstream>
+#include <gl/glew.h>
+#include <gl/GL.h>
 
 #include <GL\glew.h>
 #include <GLFW\glfw3.h>
@@ -28,6 +28,7 @@ class FBOHandler
 
 		GLuint program;
 		std::string getShader(const char* filePath);
+
 	public:
 		FBOHandler();
 		FBOHandler(unsigned int width, unsigned int height);

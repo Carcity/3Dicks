@@ -1,5 +1,11 @@
-Fragment info
--------------
-0(63) : error C1009: "Constant" is not member of struct "SpotLight"
-0(63) : error C1009: "Linear" is not member of struct "SpotLight"
-0(63) : error C1009: "Exp" is not member of struct "SpotLight"
+Compute info
+------------
+0(51) : error C1008: undefined variable "depthMap"
+0(53) : error C1008: undefined variable "normalMap"
+0(61) : error C1008: undefined variable "depthMap"
+0(76) : error C1008: undefined variable "depthMap"
+0(87) : error C1008: undefined variable "depthMap"
+
+Link info
+---------
+Programs may not contain both a compute and a non-compute shader.

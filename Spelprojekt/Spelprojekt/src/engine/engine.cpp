@@ -1,4 +1,4 @@
-#include "engine.h"
+﻿#include "engine.h"
 
 Engine::~Engine()
 {
@@ -346,4 +346,130 @@ void Engine::LinkErrorPrint(GLuint* shaderProgram)
 		if (success == GL_FALSE)
 			throw;
 	}
+}
+
+void Engine::runComputeShader(GLuint program)
+{		
+	const char* compute_shader = R"(
+	#version 430
+
+	//already normalized
+	uniform sampler2D normal;
+	uniform sampler2D depth;
+	
+	writeonly uniform image2D returnTex;
+	
+	//uniform float distanceThreshold; om man vill?
+	//uniform vec2 filterRadius;
+	
+	const float distanceThreshold = 2;
+	const int sample_count = 16;
+	const int blurSize = 4;
+	const vec2 semiRand[] = vec2[](		//semi random test points
+	                                vec2( -0.94201624,  -0.39906216 ),
+	                                vec2(  0.94558609,  -0.76890725 ),
+	                                vec2( -0.094184101, -0.92938870 ),
+	                                vec2(  0.34495938,   0.29387760 ),
+	                                vec2( -0.91588581,   0.45771432 ),
+	                                vec2( -0.81544232,  -0.87912464 ),
+	                                vec2( -0.38277543,   0.27676845 ),
+	                                vec2(  0.97484398,   0.75648379 ),
+	                                vec2(  0.44323325,  -0.97511554 ),
+	                                vec2(  0.53742981,  -0.47373420 ),
+	                                vec2( -0.26496911,  -0.41893023 ),
+	                                vec2(  0.79197514,   0.19090188 ),
+	                                vec2( -0.24188840,   0.99706507 ),
+	                                vec2( -0.81409955,   0.91437590 ),
+	                                vec2(  0.19984126,   0.78641367 ),
+	                                vec2(  0.14383161,  -0.14100790 )
+								   );
+	vec3 calculateViewPosition(in vec2 coord, in float depth)
+	{
+		//calculate the pos in view-space
+	   vec3 viewPos = vec3(0, 0, 0);
+	
+	   viewPos = vec3(gl_GlobalInvocationID.x/gl_NumWorkGroups.x, gl_GlobalInvocationID.y/ gl_NumWorkGroups.y, depth );
+	
+	
+		return viewPos;
+	}
+	
+	
+	
+	void main()
+	{
+		vec2 texCoord = vec2(gl_GlobalInvocationID.x/gl_NumWorkGroups.x, gl_GlobalInvocationID.y/ gl_NumWorkGroups.y);
+		
+		float depth = texture(depthMap, texCoord).r;
+		vec3 viewPos = calculateViewPosition(texCoord, depth);
+		vec3 viewNormal = vec3(texture(normalMap, texCoord));
+	
+		//AO starts
+		float ambientOcclusion = 0;
+		
+		for(int i = 0; i < sample_count; i++)
+		{
+			vec2 sampleTexCoord = texCoord + (semiRand[i] * 3); //where 3 = filterRadius
+			float sampleDepth = texture(depthMap, sampleTexCoord).r;
+			vec3 samplePos = calculateViewPosition(sampleTexCoord, sampleDepth);
+			vec3 sampleDir = normalize(samplePos - viewPos);	//To only sample in the half sphere(?)
+	
+			float normDotDir = max(dot(viewNormal, sampleDir), 0); //the pos of the sample
+			float sampleDistance = distance(viewPos, samplePos);
+	
+			float smoothDist = (1.0 - smoothstep(distanceThreshold, distanceThreshold * 2, sampleDistance));
+	
+			ambientOcclusion += ( smoothDist * normDotDir );
+		}
+		float a = 1.0 - (ambientOcclusion / sample_count);
+		vec4 AOpixel = vec4(a, a, a, 1);
+	
+		//should blur the outTex here
+		vec2 texelSize = 1.0 / vec2(textureSize(depthMap, 0));
+		float result = 0.0;
+	
+		//ingen aning vad det har ar men det ger en float som ska blurra?
+	
+		vec2 hlim = vec2(float(-blurSize) * 0.5 + 0.5);
+			for (int i = 0; i < blurSize; i++) 
+			{
+				for (int j = 0; j < blurSize; j++) 
+				{
+					vec2 offset = (hlim + semiRand[i+j]) * texelSize;
+					result += texture(depthMap, texCoord + offset).r;
+				}
+			}
+	 
+	    result = result / float(blurSize * blurSize);
+		AOpixel = AOpixel * result;
+	    //imageStore(returnTex, texCoord, AOpixel);
+	})";
+
+	//uniform in depth and normals
+	GLuint loc = 0;
+	loc = glGetUniformLocation(program, "depth");
+	glUniform1i(loc, 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, fboHandler->getDepth());
+
+	loc = glGetUniformLocation(program, "normal");
+	glUniform1i(loc, 1);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, fboHandler->getNormals());
+
+	GLint success = 0;
+	GLint compProgram;
+
+	//Link the shader to a program
+	GLuint cs = glCreateShader(GL_COMPUTE_SHADER);
+	glShaderSource(cs, 1, &compute_shader, nullptr);
+	glCompileShader(cs);
+	CompileErrorPrint(&cs);
+
+	compProgram = glCreateProgram();
+	glAttachShader(compProgram, cs);
+	glLinkProgram(compProgram);
+
+	//Run compute shader with x, y, z amount of threads
+	glDispatchCompute​(1, 1, 1);
 }
