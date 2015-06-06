@@ -12,6 +12,8 @@
 #include"CameraControl.h"
 #include "AnimationManager.h"
 #include "../game/map.h"
+#include "FBOHandler.h"
+#include "SpotLight.h"
 
 #include "../Align16.h"
 
@@ -26,11 +28,21 @@ private:
 	glm::mat4 projMatrix;
 	void Engine::CompileErrorPrint(GLuint* shader);
 	void Engine::LinkErrorPrint(GLuint* shaderProgram);
+	void linkDeferredTextures(GLuint program);
 	int cameraSwap = 0;
 	int cameraSwapCounter = 0;
 	// </temp>
 
 	CameraControl* cam = 0;
+
+	FBOHandler* fboHandler;
+	GLuint screenQuad;
+	void createScreenQuad();
+
+	SpotLight* spotlight;
+	int nrOfSpotLights;
+	void createLights();
+	void linkLights();
 
 public:
 	Engine(){};

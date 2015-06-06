@@ -1,2 +1,5 @@
-0(10) : error C1008: undefined variable "UVs"
-0(10) : error C1008: undefined variable "UVs"
+Fragment info
+-------------
+0(63) : error C1009: "Constant" is not member of struct "SpotLight"
+0(63) : error C1009: "Linear" is not member of struct "SpotLight"
+0(63) : error C1009: "Exp" is not member of struct "SpotLight"
