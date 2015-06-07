@@ -260,10 +260,7 @@ void Engine::render(const Map* map, const ContentManager* content, const Animati
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, 800, 800);
 
-	id = background->bindWorldMat(&tempshader, &uniformModel);
-	if (id != lastid)
-		facecount = content->bindMapObj(id); //This will be the same
-	glDrawElements(GL_TRIANGLES, facecount * 3, GL_UNSIGNED_SHORT, 0);
+
 	lastid = id;
 	lastid = -1;
 	//world objects
