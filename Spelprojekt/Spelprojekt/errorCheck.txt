@@ -1,11 +1,3 @@
-Compute info
-------------
-0(51) : error C1008: undefined variable "depthMap"
-0(53) : error C1008: undefined variable "normalMap"
-0(61) : error C1008: undefined variable "depthMap"
-0(76) : error C1008: undefined variable "depthMap"
-0(87) : error C1008: undefined variable "depthMap"
-
-Link info
----------
-Programs may not contain both a compute and a non-compute shader.
+Fragment info
+-------------
+0(131) : error C0000: syntax error, unexpected type identifier, expecting ',' or ';' at token "vec3"

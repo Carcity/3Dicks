@@ -44,8 +44,6 @@ private:
 	void createLights();
 	void linkLights();
 
-	void runComputeShader(GLuint program);
-
 public:
 	Engine(){};
 	~Engine();
