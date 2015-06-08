@@ -1,2 +1,0 @@
-0(10) : error C1008: undefined variable "UVs"
-0(10) : error C1008: undefined variable "UVs"

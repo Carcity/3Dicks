@@ -1,0 +1,42 @@
+#version 400
+layout (points) in;
+layout (triangle_strip, max_vertices = 4) out;
+
+uniform mat4 View;
+uniform mat4 Projection;
+
+uniform vec3 cRight;
+uniform vec3 cUp;
+
+in vec4 pos[1];
+in vec4 color[1];
+
+out vec4 fColor;
+
+void main()
+{
+	fColor = color[0];
+
+	vec4 worldPos = vec4(pos[0].xyz, 1.0);
+	float size = pos[0].a;
+
+	gl_Position = vec4(vec3(worldPos) - (cRight+cUp) * size, 1.0);
+	gl_Position = View * gl_Position;
+	gl_Position = Projection * gl_Position;
+	EmitVertex();
+	gl_Position = vec4(vec3(worldPos) - (cRight-cUp) * size, 1.0);
+	gl_Position = View * gl_Position;
+	gl_Position = Projection * gl_Position;
+	EmitVertex();
+	gl_Position = vec4(vec3(worldPos) + (cRight-cUp) * size, 1.0);
+	gl_Position = View * gl_Position;
+	gl_Position = Projection * gl_Position;
+	EmitVertex();
+	gl_Position = vec4(vec3(worldPos) + (cRight+cUp) * size, 1.0);
+	gl_Position = View * gl_Position;
+	gl_Position = Projection * gl_Position;
+	EmitVertex();
+	
+
+	EndPrimitive();
+}

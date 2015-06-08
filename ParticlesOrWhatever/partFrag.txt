@@ -1,0 +1,9 @@
+#version 400
+
+in vec4 fColor;
+out vec4 fragment_color;
+
+void main()
+{
+	fragment_color = fColor;
+}
