@@ -22,12 +22,21 @@ void Engine::init(glm::mat4* viewMat)
 
 	//temp camera
 	viewMatrix = viewMat;
-	projMatrix = glm::perspective(3.14f*0.45f, 800.f / 800.0f, 0.1f, 1000.0f);
+	projMatrix = glm::perspective(3.14f*0.45f, 800.f / 800.0f, 0.5f, 100.0f);
 
 	cam = new CameraControl();
 	fboHandler = new FBOHandler(800, 800);
 	createScreenQuad();
 	
+	GLuint gTanHalf = glGetUniformLocation(fboHandler->getProgram(), "gTanHalfFOV");
+	glUniform1f(gTanHalf, tanf(((3.1415 * 0.45f) * 0.5f) * 0.0174532925f));
+
+	GLuint uniformProj = glGetUniformLocation(fboHandler->getProgram(), "gProj");
+	glProgramUniformMatrix4fv(fboHandler->getProgram(), uniformProj, 1, false, &projMatrix[0][0]);
+
+	
+
+
 	createLights();
 	//Temp shader
 	const char* vertex_shader = R"(
@@ -62,6 +71,8 @@ void Engine::init(glm::mat4* viewMat)
 	uniform mat4 modelMatrix;
 	uniform mat4 VP;
 	uniform vec3 ViewPoint;
+
+	out vec3 world_pos;
 	
 	layout(location = 0) in vec2 UV[];
 
@@ -91,6 +102,7 @@ void Engine::init(glm::mat4* viewMat)
 			{
 				UVCoord = UV[i];
 				gl_Position = VP * (gl_in[i].gl_Position * modelMatrix);
+				world_pos = (  gl_in[i].gl_Position * modelMatrix).xyz;
 				EmitVertex();
 			}
 		
@@ -104,14 +116,18 @@ void Engine::init(glm::mat4* viewMat)
 	layout(location = 0) in vec2 UV;
 	layout(location = 1) in vec3 normal;
 
+	in vec3 world_pos;
+
 	uniform sampler2D textureSample;
 	layout(location = 0) out vec4 fragment_color;
 	layout(location = 1) out vec3 normal_out;
+	layout(location = 2) out vec3 worldpos;
 
 	void main () 
 	{
 		fragment_color = texture(textureSample,vec2(UV.s, UV.t));
 		normal_out = normal;
+		worldpos = world_pos;
 	}
 )";
 
@@ -166,6 +182,11 @@ void Engine::linkDeferredTextures(GLuint program)
 	glUniform1i(loc, 2);
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, fboHandler->getNormals());
+
+	loc = glGetUniformLocation(program, "worldpos");
+	glUniform1i(loc, 3);
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, fboHandler->getworldPos());
 
 	GLuint ViewPoint = glGetUniformLocation(program, "eyepos");
 	glUniform3fv(ViewPoint, 1, &cam->getPosition()[0]);
@@ -234,9 +255,13 @@ void Engine::render(const Map* map, const ContentManager* content, const Animati
 	int facecount = 0;
 	glUseProgram(tempshader);
 	
+	GLuint uniformProj = glGetUniformLocation(fboHandler->getProgram(), "viewMat");
+	//glProgramUniformMatrix4fv(fboHandler->getProgram(), uniformProj, 1, false, &(*viewMatrix)[0][0]);
 
 	glm::mat4 VP = projMatrix * *viewMatrix;
 	glProgramUniformMatrix4fv(tempshader, uniformVP, 1, false, &VP[0][0]);
+
+	glProgramUniformMatrix4fv(fboHandler->getProgram(), uniformProj, 1, false, &VP[0][0]);
 
 	GLuint ViewPoint = glGetUniformLocation(tempshader, "ViewPoint");
 	glUniform3fv(ViewPoint, 1, &cam->getPosition()[0]);
@@ -260,10 +285,7 @@ void Engine::render(const Map* map, const ContentManager* content, const Animati
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, 800, 800);
 
-	id = background->bindWorldMat(&tempshader, &uniformModel);
-	if (id != lastid)
-		facecount = content->bindMapObj(id); //This will be the same
-	glDrawElements(GL_TRIANGLES, facecount * 3, GL_UNSIGNED_SHORT, 0);
+
 	lastid = id;
 	lastid = -1;
 	//world objects

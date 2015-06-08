@@ -25,6 +25,7 @@ class FBOHandler
 		GLuint depth;
 		GLuint normals;
 		GLuint FBO;
+		GLuint worldpos;
 
 		GLuint program;
 		std::string getShader(const char* filePath);
@@ -40,6 +41,7 @@ class FBOHandler
 		GLuint getColor();
 		GLuint getDepth();
 		GLuint getNormals();
+		GLuint getworldPos();
 
 		GLuint getProgram();
 };

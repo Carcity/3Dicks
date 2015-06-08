@@ -14,10 +14,12 @@ FBOHandler::FBOHandler(unsigned int width, unsigned int height)
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, normals, 0);
 
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, worldpos, 0);
+
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth, 0);
 
-	GLenum DrawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-	glDrawBuffers(2, DrawBuffers);		//Adds the buffer to the buffer list
+	GLenum DrawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+	glDrawBuffers(3, DrawBuffers);		//Adds the buffer to the buffer list
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);		//returns to the original framebuffer
 
@@ -28,114 +30,75 @@ FBOHandler::FBOHandler(unsigned int width, unsigned int height)
 layout (location = 0) in vec3 vertex_position;
 layout(location = 1) in vec3 normal;
 
-out vec2 texcoord;
+uniform float gTanHalfFOV;
 
+out vec2 texcoord;
+out vec2 viewRay;
 void main () 
 {
 	gl_Position = vec4 (vertex_position, 1.0);
-	texcoord = vec2(clamp(vertex_position.x,0,1), clamp(vertex_position.y,0,1));
+	texcoord = (vertex_position.xy + vec2(1.0)) / 2.0f;
+	viewRay.x = vertex_position.x * gTanHalfFOV * (800.0f / 800.0f);
+	viewRay.y = vertex_position.y * gTanHalfFOV;
 }
 )";
-const char* fragment_shader = R"(
+	const char* fragment_shader = R"(
 #version 400
 uniform sampler2D color;
 uniform sampler2D normal;
 uniform sampler2D depth;
+uniform sampler2D worldpos;
 //uniform mat3 Light;
 
 in vec2 texcoord;
 out vec4 lighted_scene;
+in vec2 viewRay;
+
+uniform mat4 gProj;
+uniform mat4 viewMat;
 
 uniform vec3 eyepos;
-float gSpecularPower = 20;
-	float gMatSpecularIntensity = 0.4;
 
-struct SpotLight
-	{
-		vec3 Color;
-		float DiffuseIntensity;
-		vec3 Position;
-		float AmbientIntensity;
-		vec3 Direction;
-		float Cutoff;
-		float linear;
-		float constant;
-		float exp;
-	};
 
-	vec4 Position0;
-SpotLight gSpotLight;
-
-vec4 CalcLightInternal(SpotLight l, vec3 LightDirection, vec3 Normal)                   
-	{                                                                                           
-		vec4 AmbientColor = vec4(l.Color, 1.0f) * l.AmbientIntensity;                   
-		float DiffuseFactor = dot(Normal, -LightDirection);                                     
-                                                                                            
-		vec4 DiffuseColor  = vec4(0, 0, 0, 0);                                            
-		vec4 SpecularColor = vec4(0, 0, 0, 0);                                                  
-                                                                                            
-		if (DiffuseFactor > 0) 
-		{                                                                
-			DiffuseColor = vec4(l.Color, 1.0f) * l.DiffuseIntensity * DiffuseFactor;    
-                                                                                            
-			vec3 VertexToEye = normalize(eyepos - Position0.xyz);                             
-			vec3 LightReflect = normalize(reflect(LightDirection, Normal));                     
-			float SpecularFactor = dot(VertexToEye, LightReflect);                              
-			SpecularFactor = pow(SpecularFactor, gSpecularPower);                               
-			if (SpecularFactor > 0) 
-			{                                                           
-				SpecularColor = vec4(l.Color, 1.0f) * gMatSpecularIntensity * SpecularFactor;                         
-			}                                                                                   
-		}                                                                                                                                                                     
-		return (AmbientColor + DiffuseColor + SpecularColor);                                   
-	}               
-	
-	vec4 CalcPointLight(SpotLight l, vec3 Normal)
-	{
-		vec3 LightDirection = Position0.xyz - l.Position;
-		float Distance = length(LightDirection);
-		LightDirection = normalize(LightDirection);    
-	
-		//return (CalcLightInternal(l, LightDirection, Normal)); 
-		vec4 Color = vec4(CalcLightInternal(l, LightDirection, Normal)); 
-		float Attenuation =  l.constant + l.linear * Distance + l.exp * Distance * Distance; 
-		return Color / Attenuation;                           
-	}                                                                                           
-                                                                                            
-	vec4 CalcSpotLight(SpotLight l, vec3 Normal)                                                
-	{                                                                                           
-		vec3 LightToPixel = normalize(Position0.xyz - l.Position);                             
-		float SpotFactor = dot(LightToPixel, l.Direction);                                      
-                                                                                            
-		if (SpotFactor > l.Cutoff) {                                                            
-			vec4 Color = CalcPointLight(l, Normal);                             
-			return Color * (1.0 - (1.0 - SpotFactor) * 1.0/(1.0 - l.Cutoff));                   
-		}                                                                                       
-		else {                                                                                  
-			return vec4(0,0,0,0);                                                               
-		}     
-	}  	
+vec3 pSphere[16] = vec3[](vec3(0.53812504, 0.18565957, -0.43192),vec3(0.13790712, 0.24864247, 0.44301823),vec3(0.33715037, 0.56794053, -0.005789503),vec3(-0.6999805, -0.04511441, -0.0019965635),vec3(0.06896307, -0.15983082, -0.85477847),vec3(0.056099437, 0.006954967, -0.1843352),vec3(-0.014653638, 0.14027752, 0.0762037),vec3(0.010019933, -0.1924225, -0.034443386),vec3(-0.35775623, -0.5301969, -0.43581226),vec3(-0.3169221, 0.106360726, 0.015860917),vec3(0.010350345, -0.58698344, 0.0046293875),vec3(-0.08972908, -0.49408212, 0.3287904),vec3(0.7119986, -0.0154690035, -0.09183723),vec3(-0.053382345, 0.059675813, -0.5411899),vec3(0.035267662, -0.063188605, 0.54602677),vec3(-0.47761092, 0.2847911, -0.0271716));
 
 void main ()
 {
-	//Ska andras
-	gSpotLight.Color = vec3(1,1,1);
-	gSpotLight.DiffuseIntensity = 1;
-	gSpotLight.AmbientIntensity = 0.2f;
-	gSpotLight.Position = vec3(5,2,5);
-	gSpotLight.Direction = normalize(vec3(-3, -1, -3));//normalize(vec3(0.22f, -0.33f, 0.44f));
-	gSpotLight.Cutoff = 0.75f;
-	gSpotLight.constant = 1.0f;
-	gSpotLight.linear = 0.0f;
-	gSpotLight.exp = 0.0f;
+	vec4 mySample = texture(color, vec2(texcoord.s, texcoord.t));
 
+	vec4 pos = texture(worldpos, vec2(texcoord.s, texcoord.t));
+	vec4 norm = normalize(texture(normal, vec2(texcoord.s, texcoord.t)));
+
+	norm.w = 1.0f;
+	float AO = 0.0f;
+	
+	vec3 samp = vec3(0);
+	for (int i = 1 ; i < 16 ; ++i) {
+        vec4 poissonPos = pos + vec4(pSphere[i] * 0.1, 1.0);
+		vec4 sampleProj = viewMat * poissonPos;
+
+		sampleProj /= sampleProj.w;
+		sampleProj = (sampleProj + 1) / 2;
+
+		vec2 sampleTexCoord = sampleProj.xy;
+		vec4 samplePos = (texture(worldpos, vec2(sampleTexCoord.s, sampleTexCoord.t)));
+		vec4 sampleDir = normalize(pos - samplePos);
+
+
+		float dist = distance(samplePos, pos);
+		float a = 1.0 - smoothstep(1, 2, dist);
+		float b = max(dot(sampleDir, norm), 0);
+
+		AO += (a * b);
+	
+		samp = poissonPos.xyz;
+}
+
+	AO = (1.0 - AO)/16.0f;
+	AO = (1 - 2 * AO);
 	
 
-
-	vec4 mySample = texture(color, vec2(texcoord.s, texcoord.t));
-	Position0 = texture(depth, vec2(texcoord.s, texcoord.t));
-	vec4 normal0 = texture(normal, vec2(texcoord.s, texcoord.t));
-	lighted_scene = mySample * CalcSpotLight(gSpotLight, normal0.xyz);
+	lighted_scene = vec4(AO, AO, AO, 1.0);
 }
 )";
 
@@ -223,6 +186,21 @@ void FBOHandler::generateTexture(unsigned int width, unsigned int height)
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
 		GL_UNSIGNED_BYTE, NULL);
 
+	glGenTextures(1, &worldpos);
+	glBindTexture(GL_TEXTURE_2D, worldpos);
+
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
+		GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,
+		GL_CLAMP_TO_EDGE);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+		GL_UNSIGNED_BYTE, NULL);
+
 	glGenTextures(1, &depth);
 	glBindTexture(GL_TEXTURE_2D, depth);
 
@@ -276,6 +254,11 @@ GLuint FBOHandler::getDepth()
 GLuint FBOHandler::getNormals()
 {
 	return normals;
+}
+
+GLuint FBOHandler::getworldPos()
+{
+	return worldpos;
 }
 
 GLuint FBOHandler::getProgram()
