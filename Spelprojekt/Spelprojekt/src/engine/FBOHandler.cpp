@@ -64,6 +64,9 @@ vec3 pSphere[16] = vec3[](vec3(0.53812504, 0.18565957, -0.43192),vec3(0.13790712
 
 void main ()
 {
+	vec3 gKernel[64];
+	
+
 	vec4 mySample = texture(color, vec2(texcoord.s, texcoord.t));
 
 	vec4 pos = texture(worldpos, vec2(texcoord.s, texcoord.t));
@@ -74,7 +77,7 @@ void main ()
 	
 	vec3 samp = vec3(0);
 	for (int i = 1 ; i < 16 ; ++i) {
-        vec4 poissonPos = pos + vec4(pSphere[i] * 0.1, 1.0);
+        vec4 poissonPos = pos + vec4(pSphere[i] * 0.25, 1.0);
 		vec4 sampleProj = viewMat * poissonPos;
 
 		sampleProj /= sampleProj.w;
@@ -84,17 +87,18 @@ void main ()
 		vec4 samplePos = (texture(worldpos, vec2(sampleTexCoord.s, sampleTexCoord.t)));
 		vec4 sampleDir = normalize(pos - samplePos);
 
-
-		float dist = distance(samplePos, pos);
+		normalize(norm);
+		
+		float dist = -distance(samplePos, pos);
 		float a = 1.0 - smoothstep(1, 2, dist);
-		float b = max(dot(sampleDir, norm), 0);
+		float b = max(dot(norm, sampleDir), 0);
 
 		AO += (a * b);
 	
 		samp = poissonPos.xyz;
 }
 
-	AO = (1.0 - AO)/16.0f;
+	AO = ( AO)/16.0f;
 	AO = (1 - 2 * AO);
 	
 
@@ -116,7 +120,6 @@ void main ()
 	glAttachShader(program, vs);
 	glAttachShader(program, fs);
 	glLinkProgram(program);
-
 	GLint success = 10;
 	glGetProgramiv(program, GL_LINK_STATUS, &success);
 	if (success == GL_FALSE)

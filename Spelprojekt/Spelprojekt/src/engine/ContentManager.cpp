@@ -48,7 +48,7 @@ void ContentManager::loadMapObjs()
 	mapObjs[0] = new Object("src/meshes/PlaneVerticalF.v", "src/textures/grid.bmp");
 	mapObjs[1] = new Object("src/meshes/BaseCubeColored.v", "src/textures/black.bmp");
 	mapObjs[2] = new Object("src/meshes/BackWall.v", "src/textures/black.bmp");
-	mapObjs[3] = new Object("src/meshes/sphere.v", "src/textures/black.bmp");
+	mapObjs[3] = new Object("src/meshes/GrimStatue2.v", "src/textures/black.bmp");
 	mapObjs[4] = new Object("src/meshes/OrangeCube.v", "src/textures/black.bmp");
 	mapObjs[5] = new Object("src/meshes/PlaneHorizontal.v", "src/textures/black.bmp");
 	mapObjs[6] = new Object("src/meshes/SideBarrier.v", "src/textures/black.bmp");
