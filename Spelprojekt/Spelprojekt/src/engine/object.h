@@ -22,11 +22,6 @@ private:
 	bool textureHost = false;
 	int TEXTUREINDEXOFFSET = 0;
 	int faceCount = -1;
-
-	
-
-
-
 	
 
 	//temprary implementations
@@ -54,6 +49,7 @@ public:
 	int state = 0;
 
 	Object() {}
+	Object(std::string pathTex);
 	Object(std::string pathVert, std::string pathTex, Object* obj = 0, bool copyVert = false, bool copyTex = false);
 	Object(const Object& obj);
 	~Object();

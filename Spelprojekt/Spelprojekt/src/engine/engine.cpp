@@ -105,6 +105,8 @@ void Engine::init(glm::mat4* viewMat)
 	layout(location = 1) in vec3 normal;
 
 	uniform sampler2D textureSample;
+	uniform sampler2D normalMap;
+
 	layout(location = 0) out vec4 fragment_color;
 	layout(location = 1) out vec3 normal_out;
 
@@ -112,6 +114,9 @@ void Engine::init(glm::mat4* viewMat)
 	{
 		fragment_color = texture(textureSample,vec2(UV.s, UV.t));
 		normal_out = normal;
+		vec3 normalSample = texture(normalMap, vec2(UV.s, UV.t)).xyz;
+		normal_out = normal_out + normalSample;
+		normal_out = normalize(normal_out);
 	}
 )";
 
@@ -147,6 +152,7 @@ void Engine::init(glm::mat4* viewMat)
 	uniformModel = glGetUniformLocation(tempshader, "modelMatrix");
 	uniformVP = glGetUniformLocation(tempshader, "VP");
 
+	loadNormalMap("src/textures/normalmap.bmp");
 }
 
 void Engine::linkDeferredTextures(GLuint program)
@@ -260,6 +266,12 @@ void Engine::render(const Map* map, const ContentManager* content, const Animati
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, 800, 800);
 
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, normalMap);
+	GLuint loc = glGetUniformLocation(tempshader, "normalMap");
+	glUniform1i(loc, 1);
+	
+
 	id = background->bindWorldMat(&tempshader, &uniformModel);
 	if (id != lastid)
 		facecount = content->bindMapObj(id); //This will be the same
@@ -346,4 +358,63 @@ void Engine::LinkErrorPrint(GLuint* shaderProgram)
 		if (success == GL_FALSE)
 			throw;
 	}
+}
+
+bool Engine::loadNormalMap(std::string imagepath)
+{
+	unsigned char header[54]; // Each BMP file begins by a 54-bytes header
+	unsigned int dataPos;     // Position in the file where the actual data begins
+	unsigned int width, height;
+	unsigned int imageSize;   // = width*height*3
+	// Actual RGB data
+	unsigned char * data;
+
+	FILE* file = fopen(imagepath.c_str(), "rb");
+	if (!file)
+		return false;
+
+	if (fread(header, 1, 54, file) != 54) // If not 54 bytes read : problem
+		return false;
+
+	if (header[0] != 'B' || header[1] != 'M')
+		return false;
+
+	// Read ints from the byte array
+	dataPos = *(int*)&(header[0x0A]);
+	imageSize = *(int*)&(header[0x22]);
+	width = *(int*)&(header[0x12]);
+	height = *(int*)&(header[0x16]);
+
+	// Some BMP files are misformatted, guess missing information
+	if (imageSize == 0)
+		imageSize = width*height * 3; // 3 : one byte for each Red, Green and Blue component
+	if (dataPos == 0)
+		dataPos = 54; // The BMP header is done that way
+
+	// Create a buffer
+	data = new unsigned char[imageSize];
+
+	// Read the actual data from the file into the buffer
+	fread(data, 1, imageSize, file);
+
+	//Everything is in memory now, the file can be closed
+	fclose(file);
+
+	// Create one OpenGL texture
+	glGenTextures(1, &normalMap);
+
+	glActiveTexture(GL_TEXTURE0);
+
+	// "Bind" the newly created texture : all future texture functions will modify this texture
+	glBindTexture(GL_TEXTURE_2D, normalMap);
+
+	// Give the image to OpenGL
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_BGR, GL_UNSIGNED_BYTE, data);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	delete[] data;
+
+	return true;
 }

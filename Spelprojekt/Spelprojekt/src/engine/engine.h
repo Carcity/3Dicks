@@ -20,7 +20,6 @@
 class Engine : public Align_16
 {
 private:
-	// <temp>
 	GLuint tempshader;
 	GLuint uniformModel;
 	GLuint uniformVP;
@@ -31,7 +30,6 @@ private:
 	void linkDeferredTextures(GLuint program);
 	int cameraSwap = 0;
 	int cameraSwapCounter = 0;
-	// </temp>
 
 	CameraControl* cam = 0;
 
@@ -44,6 +42,8 @@ private:
 	void createLights();
 	void linkLights();
 
+	GLuint normalMap;
+	bool loadNormalMap(std::string imagepath);
 public:
 	Engine(){};
 	~Engine();

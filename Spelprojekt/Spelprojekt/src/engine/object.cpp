@@ -39,6 +39,10 @@ Object::Object(std::string pathVert, std::string pathTex, Object* obj, bool copy
 			textureHost = true;*/
 }
 
+Object::Object(std::string pathTex)
+{
+}
+
 Object::Object(const Object& obj)
 {
 	vertexHost = obj.vertexHost;

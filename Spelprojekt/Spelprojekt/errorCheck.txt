@@ -1,5 +1,1 @@
-Fragment info
--------------
-0(63) : error C1009: "Constant" is not member of struct "SpotLight"
-0(63) : error C1009: "Linear" is not member of struct "SpotLight"
-0(63) : error C1009: "Exp" is not member of struct "SpotLight"
+0(15) : error C7011: implicit cast from "vec4" to "vec3"
