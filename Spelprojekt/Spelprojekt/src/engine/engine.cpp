@@ -67,9 +67,32 @@ void Engine::init(glm::mat4* viewMat)
 
 	layout(location = 0) out vec2 UVCoord;
 	layout(location = 1) out vec3 normal;
+	layout(location = 2) out vec3 tangent;
 
 	void main ()
 	{
+		// Shortcuts for vertices
+		vec3 v0 = (gl_in[0].gl_Position).xyz;
+		vec3 v1 = (gl_in[1].gl_Position).xyz;
+		vec3 v2 = (gl_in[2].gl_Position).xyz;
+ 
+		// Shortcuts for UVs
+		vec2 uv0 = UV[0];
+		vec2 uv1 = UV[1];
+		vec2 uv2 = UV[2];
+ 
+		// Edges of the triangle : postion delta
+		vec3 deltaPos1 = v1-v0;
+		vec3 deltaPos2 = v2-v0;
+ 
+		// UV delta
+		vec2 deltaUV1 = uv1-uv0;
+		vec2 deltaUV2 = uv2-uv0;
+
+		float r = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
+		tangent = (deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y)*r;
+
+		
 		vec3 vector0 = vec3(gl_in[1].gl_Position - gl_in[0].gl_Position);
 		vec3 vector1 = vec3(gl_in[2].gl_Position - gl_in[0].gl_Position);
 
@@ -99,10 +122,11 @@ void Engine::init(glm::mat4* viewMat)
 	}
 )";
 
-	const char* fragment_shader = R"(
+const char* fragment_shader = R"(
 	#version 410
 	layout(location = 0) in vec2 UV;
 	layout(location = 1) in vec3 normal;
+	layout(location = 2) in vec3 tangent;
 
 	uniform sampler2D textureSample;
 	uniform sampler2D normalMap;
@@ -110,13 +134,25 @@ void Engine::init(glm::mat4* viewMat)
 	layout(location = 0) out vec4 fragment_color;
 	layout(location = 1) out vec3 normal_out;
 
+	vec3 CalcBumpedNormal()
+	{
+		vec3 tan = normalize(tangent);
+		tan = normalize(tan - dot(tan, normal) * normal);
+		vec3 bitangent = cross(tan, normal);
+		vec3 normalMap = texture(normalMap, vec2(UV.s, UV.t)).xyz;
+		normalMap = 2.0 * normalMap - vec3(1.0, 1.0, 1.0);
+		vec3 newnormal;
+		mat3 TBN = mat3(tan, bitangent, normal);
+		newnormal = TBN * normalMap;
+		newnormal = normalize(newnormal);
+		return newnormal;
+	}
+
 	void main () 
 	{
 		fragment_color = texture(textureSample,vec2(UV.s, UV.t));
-		normal_out = normal;
-		vec3 normalSample = texture(normalMap, vec2(UV.s, UV.t)).xyz;
-		normal_out = normal_out + normalSample;
-		normal_out = normalize(normal_out);
+		//normal_out = normal;
+		normal_out = CalcBumpedNormal();
 	}
 )";
 

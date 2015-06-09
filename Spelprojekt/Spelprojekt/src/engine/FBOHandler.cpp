@@ -132,10 +132,10 @@ void main ()
 	
 
 
-	vec4 mySample = texture(color, vec2(texcoord.s, texcoord.t));
+	vec4 mySample = texture(normal, vec2(texcoord.s, texcoord.t));
 	Position0 = texture(depth, vec2(texcoord.s, texcoord.t));
 	vec4 normal0 = texture(normal, vec2(texcoord.s, texcoord.t));
-	lighted_scene = mySample * CalcSpotLight(gSpotLight, normal0.xyz);
+	lighted_scene = mySample;// * CalcSpotLight(gSpotLight, normal0.xyz);
 }
 )";
 
