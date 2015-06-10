@@ -6,7 +6,9 @@
 Render::Render()
 {
 	shadowMap = new ShadowMapFBO();
+	//glViewport(0, 0, 640 * 10, 480 * 10);
 	shadowMap->Init(480, 640);
+	//glViewport(0, 0, 640, 480);	
 	rottemp = 0.0f;
 #ifdef _DEBUG
 	{GLenum err = glGetError(); if (err)
@@ -65,6 +67,7 @@ int Render::render()
 
 void Render::ShadowMapPass()
 {
+	//glViewport(0, 0, 6400, 4800);
 	glUseProgram(gShaderProgramShadow);
 
 	shadowMap->BindForWriting();
@@ -85,7 +88,7 @@ void Render::ShadowMapPass()
 	glDrawElements(GL_TRIANGLES, obj2->getFaces() * 3, GL_UNSIGNED_SHORT, 0);
 
 	viewMatrix = saveview;
-
+	//glViewport(0, 0, 640, 480);
 #ifdef _DEBUG
 	{GLenum err = glGetError(); if (err)
 		int x = 0; }
