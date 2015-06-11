@@ -47,22 +47,6 @@ void CameraControl::updateVectors()
 		);
 	head = cross(right, direction);
 
-	if (GetKeyState('A') && GetAsyncKeyState('A'))
-	{
-		position -= right * 0.005f;
-	}
-	if (GetKeyState('D') && GetAsyncKeyState('D'))
-	{
-		position += right * 0.005f;
-	}
-	if (GetKeyState('S') && GetAsyncKeyState('S'))
-	{
-		position -= direction * 0.005f;
-	}
-	if (GetKeyState('W') && GetAsyncKeyState('W'))
-	{
-		position += direction * 0.005f;
-	}
 	if (GetKeyState('F') && GetAsyncKeyState('F'))
 	{
 		if (secondViewTime)
